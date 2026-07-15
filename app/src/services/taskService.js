@@ -1,4 +1,5 @@
 import { v4 as uuid } from "uuid";
+import { validateTask } from "../validators/taskValidator.js";
 
 import {
   saveTask,
@@ -9,13 +10,12 @@ import {
 } from "../repositories/taskRepository.js";
 
 export const createTask = async (body) => {
+  validateTask(body);
+
   const task = {
     id: uuid(),
-
     title: body.title,
-
     description: body.description || "",
-
     status: "PENDING",
   };
 
@@ -33,6 +33,7 @@ export const getTaskById = async (id) => {
 };
 
 export const updateTask = async (id, body) => {
+  validateTask(body);
   await updateTaskById(id, body);
 
   return await findTaskById(id);
