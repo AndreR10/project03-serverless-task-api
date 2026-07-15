@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.terraform/
+*.tfstate
+*.tfstate.backup
+/.idea/
+/.vscode/
+envrc
+.DS_Store
+coverage/
+*.log
+build/
+*.zip

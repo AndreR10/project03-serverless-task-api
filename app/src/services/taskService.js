@@ -1,0 +1,43 @@
+import { v4 as uuid } from "uuid";
+
+import {
+  saveTask,
+  findAllTasks,
+  findTaskById,
+  updateTaskById,
+  deleteTaskById,
+} from "../repositories/taskRepository.js";
+
+export const createTask = async (body) => {
+  const task = {
+    id: uuid(),
+
+    title: body.title,
+
+    description: body.description || "",
+
+    status: "PENDING",
+  };
+
+  await saveTask(task);
+
+  return task;
+};
+
+export const getAllTasks = async () => {
+  return await findAllTasks();
+};
+
+export const getTaskById = async (id) => {
+  return await findTaskById(id);
+};
+
+export const updateTask = async (id, body) => {
+  await updateTaskById(id, body);
+
+  return await findTaskById(id);
+};
+
+export const deleteTask = async (id) => {
+  await deleteTaskById(id);
+};
