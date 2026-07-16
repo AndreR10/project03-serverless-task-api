@@ -2,24 +2,23 @@
 
 ## Overview
 
-This guide explains how to deploy the **Serverless Task Management API** using two different approaches:
+This guide explains how to deploy the Serverless Task Management API using two approaches:
 
-1. **AWS Management Console (GUI)**
-2. **Terraform (Infrastructure as Code)**
+1. AWS Management Console (GUI)
+2. Terraform (Infrastructure as Code)
 
 The project is intentionally designed to support both methods so you can understand the AWS services before automating them with Terraform.
 
 ---
 
-# Prerequisites
+## Prerequisites
 
-Before deploying the project, ensure you have:
+Before deploying the project, ensure you have the following:
 
-## AWS
+### AWS
 
-- AWS Account
-- AWS CLI installed
-- AWS CLI configured
+- AWS account
+- AWS CLI installed and configured
 - IAM user with sufficient permissions
 
 Verify your AWS credentials:
@@ -40,7 +39,7 @@ Expected output:
 
 ---
 
-## Development Tools
+### Development Tools
 
 Install:
 
@@ -50,7 +49,7 @@ Install:
 - Terraform
 - Visual Studio Code (recommended)
 
-Verify installations:
+Verify the installations:
 
 ```bash
 node --version
@@ -61,11 +60,10 @@ git --version
 
 ---
 
-# Project Structure
+## Project Structure
 
 ```text
 project03-serverless-task-api/
-
 ├── app/
 ├── build/
 ├── docs/
@@ -75,21 +73,13 @@ project03-serverless-task-api/
 
 ---
 
-# Deployment Option 1 - AWS Management Console
+## Deployment Option 1 - AWS Management Console
 
 This deployment method is intended for learning how AWS services are configured manually.
 
----
+### Step 1 - Create the DynamoDB Table
 
-## Step 1 - Create the DynamoDB Table
-
-Open:
-
-**AWS Console → DynamoDB**
-
-Select:
-
-**Create table**
+Open AWS Console → DynamoDB and select Create table.
 
 Configuration:
 
@@ -104,15 +94,11 @@ Create the table.
 
 ---
 
-## Step 2 - Create the IAM Role
+### Step 2 - Create the IAM Role
 
-Open:
+Open AWS Console → IAM → Roles and create a new role.
 
-**AWS Console → IAM → Roles**
-
-Create a new role.
-
-Trusted Entity:
+Trusted entity:
 
 - AWS Service
 - Lambda
@@ -121,7 +107,7 @@ Attach:
 
 - AWSLambdaBasicExecutionRole
 
-Create a custom policy allowing:
+Create a custom policy that allows:
 
 - PutItem
 - GetItem
@@ -129,19 +115,16 @@ Create a custom policy allowing:
 - DeleteItem
 - Scan
 
-on the DynamoDB table.
-
-Attach the policy to the role.
+on the DynamoDB table, then attach the policy to the role.
 
 ---
 
-## Step 3 - Build the Lambda Package
+### Step 3 - Build the Lambda Package
 
-From the project root:
+From the project root, run:
 
 ```bash
 cd scripts
-
 ./build.sh
 ```
 
@@ -149,15 +132,9 @@ The script generates the deployment package.
 
 ---
 
-## Step 4 - Create the Lambda Function
+### Step 4 - Create the Lambda Function
 
-Open:
-
-**AWS Console → Lambda**
-
-Select:
-
-**Create Function**
+Open AWS Console → Lambda and select Create Function.
 
 Configuration:
 
@@ -172,13 +149,11 @@ Upload the generated ZIP package.
 
 ---
 
-## Step 5 - Configure Environment Variables
+### Step 5 - Configure Environment Variables
 
-Inside the Lambda function:
+Inside the Lambda function, open Configuration → Environment Variables.
 
-**Configuration → Environment Variables**
-
-Create:
+Create the following variable:
 
 | Variable   | Value              |
 | ---------- | ------------------ |
@@ -188,54 +163,40 @@ Deploy the changes.
 
 ---
 
-## Step 6 - Create the REST API
+### Step 6 - Create the REST API
 
-Open:
+Open AWS Console → API Gateway and create a REST API.
 
-**AWS Console → API Gateway**
-
-Create:
-
-REST API
-
-Create resources:
+Create the following resources:
 
 ```text
 /v1
-
 /v1/tasks
-
 /v1/tasks/{id}
 ```
 
-Create methods:
+Create the following methods:
 
 | Resource    | Methods          |
 | ----------- | ---------------- |
 | /tasks      | GET, POST        |
 | /tasks/{id} | GET, PUT, DELETE |
 
-Enable:
+Enable Lambda Proxy Integration and select the following function:
 
-**Lambda Proxy Integration**
-
-Select:
-
-```
+```text
 task-api-dev-handler
 ```
 
-Deploy the API.
+Deploy the API and create a stage named:
 
-Create stage:
-
-```
+```text
 dev
 ```
 
 ---
 
-## Step 7 - Test the API
+### Step 7 - Test the API
 
 Example:
 
@@ -248,15 +209,13 @@ If everything is configured correctly, the API returns an HTTP response.
 
 ---
 
-# Deployment Option 2 - Terraform
+## Deployment Option 2 - Terraform
 
 Terraform creates all infrastructure automatically.
 
----
+### Step 1 - Configure AWS Credentials
 
-## Step 1 - Configure AWS Credentials
-
-Verify:
+Verify your credentials:
 
 ```bash
 aws sts get-caller-identity
@@ -264,32 +223,30 @@ aws sts get-caller-identity
 
 ---
 
-## Step 2 - Build the Lambda Package
+### Step 2 - Build the Lambda Package
 
 ```bash
 cd scripts
-
 ./build.sh
 ```
 
 ---
 
-## Step 3 - Initialize Terraform
+### Step 3 - Initialize Terraform
 
 ```bash
 cd ../terraform
-
 terraform init
 ```
 
-Downloads:
+This downloads the required providers:
 
 - AWS Provider
 - Archive Provider
 
 ---
 
-## Step 4 - Format
+### Step 4 - Format
 
 ```bash
 terraform fmt -recursive
@@ -297,13 +254,13 @@ terraform fmt -recursive
 
 ---
 
-## Step 5 - Validate
+### Step 5 - Validate
 
 ```bash
 terraform validate
 ```
 
-Expected:
+Expected output:
 
 ```text
 Success! The configuration is valid.
@@ -311,13 +268,13 @@ Success! The configuration is valid.
 
 ---
 
-## Step 6 - Review the Plan
+### Step 6 - Review the Plan
 
 ```bash
 terraform plan
 ```
 
-Review:
+Review the following before applying:
 
 - Resources to create
 - Changes
@@ -327,19 +284,19 @@ Never skip this step.
 
 ---
 
-## Step 7 - Apply
+### Step 7 - Apply
 
 ```bash
 terraform apply
 ```
 
-Confirm:
+Confirm with:
 
 ```text
 yes
 ```
 
-Terraform creates:
+Terraform creates the following resources:
 
 - IAM Role
 - IAM Policies
@@ -352,13 +309,13 @@ Terraform creates:
 
 ---
 
-## Step 8 - Retrieve Outputs
+### Step 8 - Retrieve Outputs
 
 ```bash
 terraform output
 ```
 
-Example:
+Example output:
 
 ```text
 api_base_url = https://xxxxxxxx.execute-api.eu-west-1.amazonaws.com/dev
@@ -366,7 +323,7 @@ api_base_url = https://xxxxxxxx.execute-api.eu-west-1.amazonaws.com/dev
 
 ---
 
-# Updating the Application
+## Updating the Application
 
 If only the application code changes:
 
@@ -375,7 +332,6 @@ If only the application code changes:
 
 ```bash
 cd scripts
-
 ./build.sh
 ```
 
@@ -383,7 +339,6 @@ cd scripts
 
 ```bash
 cd ../terraform
-
 terraform apply
 ```
 
@@ -391,7 +346,7 @@ Terraform detects the updated ZIP package and updates the Lambda function.
 
 ---
 
-# Destroying the Infrastructure
+## Destroying the Infrastructure
 
 To remove all resources:
 
@@ -399,7 +354,7 @@ To remove all resources:
 terraform destroy
 ```
 
-Confirm:
+Confirm with:
 
 ```text
 yes
@@ -409,56 +364,56 @@ This helps avoid unnecessary AWS charges.
 
 ---
 
-# Deployment Verification
+## Deployment Verification
 
-After deployment, verify:
+After deployment, verify the following:
 
-## Lambda
+### Lambda
 
 - Function exists
-- Environment variables configured
+- Environment variables are configured
 - Test invocation succeeds
 
 ---
 
-## DynamoDB
+### DynamoDB
 
 - Table exists
 - Billing mode is On-Demand
 
 ---
 
-## API Gateway
+### API Gateway
 
-- REST API deployed
-- Stage `dev` exists
+- REST API is deployed
+- Stage dev exists
 - Endpoints are reachable
 
 ---
 
-## CloudWatch
+### CloudWatch
 
-- Lambda log group created
-- Logs generated after invocation
-
----
-
-# Common Deployment Issues
-
-| Problem                       | Solution                                                          |
-| ----------------------------- | ----------------------------------------------------------------- |
-| Invalid AWS credentials       | Run `aws configure` and verify with `aws sts get-caller-identity` |
-| Lambda cannot access DynamoDB | Verify IAM permissions                                            |
-| Internal Server Error         | Check CloudWatch Logs                                             |
-| API returns 403               | Verify Lambda permission for API Gateway                          |
-| API returns 404               | Confirm the API was deployed to the `dev` stage                   |
-| Terraform validation fails    | Run `terraform fmt` and `terraform validate`                      |
+- Lambda log group is created
+- Logs are generated after invocation
 
 ---
 
-# Deployment Checklist
+## Common Deployment Issues
 
-Before considering the deployment complete, verify:
+| Problem                       | Solution                                                      |
+| ----------------------------- | ------------------------------------------------------------- |
+| Invalid AWS credentials       | Run aws configure and verify with aws sts get-caller-identity |
+| Lambda cannot access DynamoDB | Verify IAM permissions                                        |
+| Internal Server Error         | Check CloudWatch Logs                                         |
+| API returns 403               | Verify Lambda permission for API Gateway                      |
+| API returns 404               | Confirm the API was deployed to the dev stage                 |
+| Terraform validation fails    | Run terraform fmt and terraform validate                      |
+
+---
+
+## Deployment Checklist
+
+Before considering the deployment complete, verify the following:
 
 - ✅ AWS credentials configured
 - ✅ Lambda package built
@@ -473,7 +428,7 @@ Before considering the deployment complete, verify:
 
 ---
 
-# Next Steps
+## Next Steps
 
 With the infrastructure successfully deployed, the next phase focuses on operational excellence:
 
