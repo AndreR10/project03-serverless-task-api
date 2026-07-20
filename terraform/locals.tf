@@ -1,33 +1,29 @@
 locals {
+  project     = var.project_name
+  environment = var.environment
 
-  project = "task-api"
-
-  environment = "dev"
-
-  lambda_name = aws_lambda_function.task_handler.function_name
-
-  api_name = aws_api_gateway_rest_api.task_api.name
-
-  table_name = aws_dynamodb_table.tasks.name
-
+  lambda_name = module.compute.function_name
+  api_name    = module.api.api_name
+  table_name  = module.dynamodb.table_name
 
   tags = {
-
-    Project     = local.project
-    Environment = local.environment
+    Project     = var.project_name
+    Environment = var.environment
     ManagedBy   = "Terraform"
-
+    Owner       = "Andre Ramos"
   }
 
-  tasks_methods = toset([
+  tasks_methods   = toset(var.tasks_methods)
+  task_id_methods = toset(var.task_id_methods)
+
+  collection_methods = toset([
     "GET",
     "POST"
   ])
 
-  task_id_methods = toset([
+  item_methods = toset([
     "GET",
     "PUT",
     "DELETE"
   ])
-
 }

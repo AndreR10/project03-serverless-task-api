@@ -1,20 +1,24 @@
 output "dynamodb_table_name" {
-  value = aws_dynamodb_table.tasks.name
+  value = module.dynamodb.table_name
 }
 
-
 output "dynamodb_table_arn" {
-  value = aws_dynamodb_table.tasks.arn
+  value = module.dynamodb.table_arn
 }
 
 output "api_url" {
-  value = "${aws_api_gateway_stage.dev.invoke_url}/v1/tasks"
+  value = "${module.api.stage_url}/v1/tasks"
 }
 
 output "api_base_url" {
-  value = aws_api_gateway_stage.dev.invoke_url
+  value = module.api.stage_url
 }
 
 output "lambda_name" {
-  value = aws_lambda_function.task_handler.function_name
+  value = module.compute.function_name
+}
+
+output "sns_topic_arn" {
+  description = "SNS Topic ARN"
+  value       = module.monitoring.sns_topic_arn
 }
