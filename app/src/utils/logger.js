@@ -17,7 +17,10 @@ function write(level, message, metadata = {}) {
 
 export const logger = {
   debug: (message, metadata = {}) => write("DEBUG", message, metadata),
+
   info: (message, metadata = {}) => write("INFO", message, metadata),
+
   warn: (message, metadata = {}) => write("WARN", message, metadata),
+
   error: (message, metadata = {}) => write("ERROR", message, metadata),
 };

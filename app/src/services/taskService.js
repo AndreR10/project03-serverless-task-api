@@ -1,5 +1,6 @@
 import { v4 as uuid } from "uuid";
 import { validateTask } from "../validators/taskValidator.js";
+import { config } from "../config/config.js";
 
 import {
   saveTask,
@@ -16,7 +17,7 @@ export const createTask = async (body) => {
     id: uuid(),
     title: body.title,
     description: body.description || "",
-    status: "PENDING",
+    status: config.defaultStatus,
   };
 
   await saveTask(task);
