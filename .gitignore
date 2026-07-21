@@ -1,13 +1,29 @@
 node_modules/
 dist/
-.terraform/
-*.tfstate
-*.tfstate.backup
 /.idea/
 /.vscode/
 envrc
-.DS_Store
 coverage/
 *.log
 build/
+
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+terraform.tfvars
+
+# Plans
+*.tfplan
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Lambda packages
 *.zip
