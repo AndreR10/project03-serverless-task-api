@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 import { validateTask } from "../validators/taskValidator.js";
-import { config } from "../config/config.js";
+import { getConfig } from "../config/config.js";
 
 import {
   saveTask,
@@ -12,6 +12,8 @@ import {
 
 export const createTask = async (body) => {
   validateTask(body);
+
+  const config = await getConfig();
 
   const task = {
     id: uuid(),

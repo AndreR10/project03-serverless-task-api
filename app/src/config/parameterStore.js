@@ -1,4 +1,5 @@
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
+import { logger } from "../utils/index.js";
 
 const client = new SSMClient({});
 
@@ -7,11 +8,19 @@ export const getParameter = async (name) => {
     const response = await client.send(
       new GetParameterCommand({
         Name: name,
+        WithDecryption: true,
       }),
     );
 
     return response.Parameter?.Value;
   } catch (error) {
-    throw new Error(`Unable to retrieve parameter '${name}': ${error.message}`);
+    logger.error("Failed to retrieve parameter", {
+      name,
+      error: error.message,
+    });
+
+    throw new Error("Failed to retrieve parameter", {
+      cause: error,
+    });
   }
 };
