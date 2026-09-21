@@ -1,29 +1,42 @@
+# Dependencies
 node_modules/
-dist/
-/.idea/
-/.vscode/
-envrc
-coverage/
-*.log
-build/
 
+# Build / generated files
+dist/
+build/
+coverage/
+*.zip
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
 
 # Terraform
 .terraform/
 *.tfstate
 *.tfstate.*
-crash.log
-terraform.tfvars
-
-# Plans
 *.tfplan
+crash.log
+
+# Terraform variable files
+terraform/*.tfvars
+!terraform/terraform.tfvars.example
+
+# Terraform backend bootstrap state
+terraform-backend/*.tfstate
+terraform-backend/*.tfstate.*
 
 # IDE
 .vscode/
 .idea/
+*.code-workspace
 
 # OS
 .DS_Store
 
-# Lambda packages
-*.zip
+# Local tooling
+envrc

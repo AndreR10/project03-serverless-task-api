@@ -1,0 +1,76 @@
+name: CI
+
+# This workflow runs automatically when code is pushed or a pull request is opened to main.
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+
+jobs:
+  # Check the application code with Node.js and npm.
+  application:
+    name: Application Checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      # Download the repository files so the workflow can use them.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Set up Node.js for running the app checks.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      # Install the app dependencies.
+      - name: Install dependencies
+        run: npm ci
+
+      # Check the code style.
+      - name: Run lint
+        run: npm run lint
+
+      # Run the app tests.
+      - name: Run tests
+        run: npm test
+
+  # Check the Terraform files for correctness.
+  terraform:
+    name: Terraform Checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      # Download the repository files again for this job.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install Terraform so we can validate the infrastructure code.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # Make sure the Terraform files are formatted correctly.
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      # Initialize Terraform without using the remote backend.
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      # Validate the Terraform configuration.
+      - name: Terraform Validate
+        run: terraform validate
