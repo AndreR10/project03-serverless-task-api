@@ -71,7 +71,7 @@ module "monitoring" {
 
   project     = var.project_name
   environment = var.environment
-  region      = var.aws_region
+  region      = var.region
   alert_email = var.alert_email
   api_name    = module.api.api_name
   lambda_name = module.compute.function_name
