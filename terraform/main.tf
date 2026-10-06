@@ -88,3 +88,12 @@ module "parameter_store" {
 
   tags = local.tags
 }
+
+module "github_actions" {
+  source = "./modules/github-actions"
+
+  github_owner        = var.github_owner
+  github_owner_id     = var.github_owner_id
+  github_repository   = var.github_repository
+  github_repository_id = var.github_repository_id
+}

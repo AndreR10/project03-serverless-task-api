@@ -2,3 +2,9 @@ region = "eu-west-1"
 environment = "dev"
 project_name = "task-api"
 alert_email = "your-email@example.com"
+
+# GitHub repository configuration
+github_owner         = "YOUR_GITHUB_USERNAME"
+github_owner_id      = "YOUR_GITHUB_OWNER_ID"
+github_repository    = "project03-serverless-task-api"
+github_repository_id = "YOUR_GITHUB_REPOSITORY_ID"
