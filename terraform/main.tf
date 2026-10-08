@@ -92,8 +92,20 @@ module "parameter_store" {
 module "github_actions" {
   source = "./modules/github-actions"
 
-  github_owner        = var.github_owner
-  github_owner_id     = var.github_owner_id
-  github_repository   = var.github_repository
-  github_repository_id = var.github_repository_id
+  project                      = var.project_name
+  environment                  = var.environment
+  aws_region                   = var.region
+  tags                         = local.tags
+  github_owner                 = var.github_owner
+  github_owner_id              = var.github_owner_id
+  github_repository            = var.github_repository
+  github_repository_id         = var.github_repository_id
+  github_branch                = var.github_branch
+  terraform_state_bucket       = "task-api-terraform-state-bucket"
+  lambda_artifacts_bucket_name = module.s3.bucket_name
+  lambda_function_name         = module.compute.function_name
+  lambda_log_group_name        = "/aws/lambda/${var.project_name}-${var.environment}-handler"
+  api_gateway_execution_arn    = module.api.execution_arn
+  dynamodb_table_arn           = module.dynamodb.table_arn
+  ssm_parameter_arns           = module.parameter_store.parameter_store_arns
 }

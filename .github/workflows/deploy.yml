@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Terraform Deployment
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      TF_VAR_region: eu-west-1
+      TF_VAR_environment: dev
+      TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
+      TF_VAR_lambda_log_level: INFO
+      TF_VAR_github_owner: ${{ github.repository_owner }}
+      TF_VAR_github_owner_id: ${{ vars.OWNER_ID }}
+      TF_VAR_github_repository: ${{ github.event.repository.name }}
+      TF_VAR_github_repository_id: ${{ vars.REPOSITORY_ID }}
+      TF_VAR_github_branch: main
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: eu-west-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan

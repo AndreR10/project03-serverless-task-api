@@ -22,3 +22,18 @@ output "sns_topic_arn" {
   description = "SNS Topic ARN"
   value       = module.monitoring.sns_topic_arn
 }
+
+output "github_actions_role_arn" {
+  description = "ARN of the IAM role assumed by GitHub Actions through OIDC."
+  value       = module.github_actions.role_arn
+}
+
+output "github_actions_role_name" {
+  description = "Name of the IAM role assumed by GitHub Actions through OIDC."
+  value       = module.github_actions.role_name
+}
+
+output "github_actions_oidc_provider_arn" {
+  description = "ARN of the GitHub OIDC provider registered in AWS IAM."
+  value       = module.github_actions.oidc_provider_arn
+}

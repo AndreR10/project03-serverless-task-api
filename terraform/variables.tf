@@ -106,3 +106,9 @@ variable "github_repository_id" {
   description = "GitHub repository ID."
   type        = string
 }
+
+variable "github_branch" {
+  description = "GitHub branch allowed to assume the deployment role."
+  type        = string
+  default     = "main"
+}
