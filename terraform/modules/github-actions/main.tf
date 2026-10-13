@@ -174,7 +174,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
-    sid    = "SsmParameterMetadata" 
+    sid    = "SsmParameterMetadata"
     effect = "Allow"
 
     actions = [
