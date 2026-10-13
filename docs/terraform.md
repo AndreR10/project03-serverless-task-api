@@ -1,523 +1,219 @@
-# Terraform Guide
+# Terraform guide
 
-## Overview
+This project uses Terraform to create and manage the AWS infrastructure in a repeatable way.
 
-This project uses **Terraform** to provision and manage all AWS infrastructure.
-
-Instead of manually creating resources in the AWS Management Console, Terraform allows us to define the infrastructure as code, making deployments repeatable, version-controlled, and consistent across environments.
+Instead of clicking around in the AWS console, you write infrastructure as code. That means your cloud setup is saved in files, reviewed in Git, and recreated consistently whenever needed.
 
 ---
 
-# Why Terraform?
+## Why Terraform is used here
 
-Infrastructure as Code (IaC) provides several advantages over manual deployments.
+Terraform helps with:
 
-## Benefits
+- repeatable deployments
+- better team collaboration
+- version-controlled infrastructure
+- easier reproduction of environments
+- less manual configuration mistakes
 
-- Infrastructure is version controlled.
-- Deployments are repeatable.
-- Resources are created consistently.
-- Changes can be reviewed before deployment.
-- Infrastructure can be recreated at any time.
-- Supports multiple environments (dev, test, prod).
+This is especially important for a portfolio project because it shows a professional cloud workflow.
 
 ---
 
-# Project Structure
+## Project structure
+
+The Terraform configuration is split into a few main areas:
 
 ```text
 terraform/
-
-├── api_gateway.tf
-├── dynamodb.tf
-├── iam.tf
-├── lambda.tf
-├── locals.tf
-├── outputs.tf
-├── providers.tf
+├── main.tf
 ├── variables.tf
+├── locals.tf
+├── providers.tf
+├── outputs.tf
+├── terraform.tfvars.example
+├── modules/
+│   ├── api/
+│   ├── compute/
+│   ├── dynamodb/
+│   ├── github-actions/
+│   ├── monitoring/
+│   ├── parameter-store/
+│   ├── s3/
+│   └── security/
+└── backend.tf
 ```
 
-Each file groups resources by responsibility rather than by resource type.
+This is a modular approach: smaller pieces are grouped by concern, which makes the project easier to maintain.
 
 ---
 
-# providers.tf
+## Important Terraform files
 
-## Purpose
+### `variables.tf`
 
-Defines:
+This file declares the input variables for the project.
 
-- Terraform version
-- Required providers
-- AWS provider configuration
+Examples include:
+
+- region
+- environment
+- project_name
+- alert_email
+- GitHub owner and repo identifiers
+
+These values can change from one environment or deployment to another.
+
+---
+
+### `terraform.tfvars.example`
+
+This is a template you copy and customize locally.
 
 Example:
-
-```hcl
-terraform {
-
-  required_version = ">= 1.5"
-
-  required_providers {
-
-    aws = {
-      source = "hashicorp/aws"
-      version = "~> 6.0"
-    }
-
-    archive = {
-      source = "hashicorp/archive"
-      version = "~> 2.7"
-    }
-
-  }
-
-}
-
-provider "aws" {
-
-  region = var.region
-
-}
-```
-
-## Why?
-
-Keeping provider configuration in a dedicated file makes it easy to update provider versions and reuse the project across environments.
-
----
-
-# variables.tf
-
-## Purpose
-
-Defines values that may change between deployments.
-
-Current variable:
-
-```hcl
-variable "region" {
-
-  type = string
-
-  default = "eu-west-1"
-
-}
-```
-
-## Why use variables?
-
-Without variables:
 
 ```hcl
 region = "eu-west-1"
+environment = "dev"
+project_name = "task-api"
+alert_email = "your-email@example.com"
+
+github_owner = "YOUR_GITHUB_USERNAME"
+github_owner_id = "YOUR_GITHUB_OWNER_ID"
+github_repository = "project03-serverless-task-api"
+github_repository_id = "YOUR_GITHUB_REPOSITORY_ID"
+github_branch = "main"
 ```
 
-would need to be changed everywhere.
-
-Using variables allows:
-
-- Different AWS Regions
-- Different environments
-- Better reusability
+This file is not meant to be committed with real values.
 
 ---
 
-# locals.tf
+### `backend.tf`
 
-## Purpose
+This configures the backend used for Terraform state.
 
-Stores values that are reused throughout the project.
+For real projects, the state should usually live in a remote backend, not only in a local file.
 
-Example:
+---
+
+### `main.tf`
+
+This file wires the root module together and calls the child modules.
+
+It is the place where the project is assembled from smaller Terraform modules.
+
+---
+
+## `TF_VAR_*` environment variables
+
+Terraform supports environment variables in this format:
+
+```bash
+TF_VAR_github_owner_id=123456
+```
+
+That value is automatically mapped to the Terraform variable:
 
 ```hcl
-locals {
-
-  project = "task-api"
-
-  environment = "dev"
-
+variable "github_owner_id" {
+  type = string
 }
 ```
 
-Instead of writing:
+This is exactly how GitHub Actions passes values into Terraform in this project.
 
-```text
-task-api-dev-handler
+Example in GitHub Actions:
 
-task-api-dev-table
-
-task-api-dev-api
+```yaml
+TF_VAR_github_owner_id: ${{ vars.OWNER_ID }}
+TF_VAR_github_repository_id: ${{ vars.REPOSITORY_ID }}
 ```
 
-multiple times, Terraform builds the names automatically.
+This means:
+
+- GitHub variables are the source values
+- `TF_VAR_*` is the bridge to Terraform
+- the Terraform input variable names must match
 
 ---
 
-## Resource Tags
+## Terraform workflow
 
-All resources share the same tags:
-
-```hcl
-tags = {
-
-  Project = local.project
-
-  Environment = local.environment
-
-  ManagedBy = "Terraform"
-
-}
-```
-
-Benefits:
-
-- Easier cost tracking
-- Resource organization
-- Operational visibility
-
----
-
-## Dynamic API Methods
-
-Instead of creating one resource per HTTP method:
-
-```hcl
-resource "aws_api_gateway_method" "tasks_post"
-```
-
-we use:
-
-```hcl
-tasks_methods = toset([
-  "GET",
-  "POST"
-])
-```
-
-combined with:
-
-```hcl
-for_each = local.tasks_methods
-```
-
-Terraform automatically creates one resource for each method.
-
-Benefits:
-
-- Less duplication
-- Easier maintenance
-- Easier to extend
-
----
-
-# dynamodb.tf
-
-## Purpose
-
-Creates the DynamoDB table.
-
-Responsibilities:
-
-- Table creation
-- Billing mode
-- Partition key
-- Tags
-
-Current configuration:
-
-- Billing Mode: On-Demand
-- Partition Key: id
-
----
-
-# iam.tf
-
-## Purpose
-
-Creates the security configuration.
-
-Resources:
-
-- IAM Role
-- IAM Policy
-- Policy Attachments
-
-Lambda receives permission to:
-
-- Read DynamoDB
-- Write DynamoDB
-- Write CloudWatch Logs
-
-The project follows the **Least Privilege Principle**.
-
----
-
-# lambda.tf
-
-## Purpose
-
-Creates:
-
-- Lambda deployment package
-- Lambda function
-
-Terraform uses the Archive Provider:
-
-```hcl
-data "archive_file"
-```
-
-to automatically package the application into a ZIP file.
-
-Benefits:
-
-- No manual ZIP creation
-- Consistent deployments
-- Automatic updates when source code changes
-
----
-
-# api_gateway.tf
-
-## Purpose
-
-Creates the REST API.
-
-Resources include:
-
-- REST API
-- Resources
-- Methods
-- Integrations
-- Deployment
-- Stage
-
-The API follows:
-
-```text
-/v1/tasks
-```
-
-and
-
-```text
-/v1/tasks/{id}
-```
-
----
-
-## Why use `for_each`?
-
-Instead of:
-
-```hcl
-tasks_get
-
-tasks_post
-
-task_put
-
-task_delete
-```
-
-we define:
-
-```hcl
-tasks_methods
-
-task_id_methods
-```
-
-Terraform generates all required methods automatically.
-
-This approach:
-
-- Reduces code duplication
-- Improves readability
-- Simplifies future maintenance
-
----
-
-# outputs.tf
-
-## Purpose
-
-Displays useful information after deployment.
-
-Example:
-
-```text
-API URL
-
-Lambda Name
-
-DynamoDB Table
-```
-
-This avoids manually searching the AWS Console after every deployment.
-
----
-
-# Terraform Workflow
-
-## 1. Initialize
+### 1. Initialize
 
 ```bash
 terraform init
 ```
 
-Downloads:
+This downloads providers and prepares the working directory.
 
-- AWS Provider
-- Archive Provider
-- Initializes the working directory
-
-Run whenever:
-
-- Starting a new project
-- Adding providers
-- Updating provider versions
-
----
-
-## 2. Format
+### 2. Format
 
 ```bash
 terraform fmt
 ```
 
-Formats all Terraform files.
+This keeps the code clean and consistent.
 
-Benefits:
-
-- Consistent style
-- Easier code reviews
-- Cleaner Git diffs
-
----
-
-## 3. Validate
+### 3. Validate
 
 ```bash
 terraform validate
 ```
 
-Checks:
+This checks whether the configuration is syntactically and logically valid.
 
-- Syntax
-- References
-- Configuration correctness
-
-No resources are created.
-
----
-
-## 4. Plan
+### 4. Plan
 
 ```bash
 terraform plan
 ```
 
-Shows:
+This shows what Terraform is going to create or modify.
 
-- Resources to create
-- Resources to modify
-- Resources to destroy
-
-Always review the plan before applying changes.
-
----
-
-## 5. Apply
+### 5. Apply
 
 ```bash
 terraform apply
 ```
 
-Creates or updates infrastructure.
+This creates or updates the infrastructure in AWS.
 
-Terraform compares:
-
-Desired State (code)
-
-↓
-
-Current State (AWS)
-
-↓
-
-Applies only the required changes.
-
----
-
-## 6. Destroy
+### 6. Destroy
 
 ```bash
 terraform destroy
 ```
 
-Removes all managed resources.
-
-Useful for:
-
-- Cleaning up
-- Avoiding unnecessary AWS costs
-- Recreating environments
+This removes all infrastructure managed by Terraform.
 
 ---
 
-# Terraform State
+## Important beginner concept: state
 
-Terraform stores infrastructure information in a **state file**.
+Terraform tracks the current infrastructure in a state file.
 
-Current project:
+This helps Terraform know:
 
-```text
-terraform.tfstate
-```
+- what already exists
+- what needs to change
+- what is safe to update
 
-The state file records:
-
-- Resource IDs
-- Dependencies
-- Current configuration
-
-Terraform uses this file to determine what has changed.
+You should treat Terraform state as important infrastructure data.
 
 ---
 
-# Dependency Graph
+## Beginner takeaway
 
-Terraform automatically determines resource creation order.
+The core idea is simple:
 
-Example:
+- write infrastructure in code
+- let Terraform compare code vs AWS
+- apply only the required changes
+- keep deployments consistent and trackable
 
-```text
-IAM Role
-      │
-      ▼
-Lambda Function
-      │
-      ▼
-API Gateway Integration
-      │
-      ▼
-API Deployment
-      │
-      ▼
-Stage
-```
-
-Explicit dependencies are added only when Terraform cannot infer the correct order.
-
----
-
-# Resource Lifecycle
-
-Typical deployment flow:
+That is the foundation of modern cloud infrastructure management.
 
 ```text
 terraform apply

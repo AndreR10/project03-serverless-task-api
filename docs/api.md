@@ -1,8 +1,8 @@
 # API Reference
 
-## Overview
+This guide explains how to call the API in the project and what responses you should expect.
 
-The **Serverless Task Management API** is a REST API built with Amazon API Gateway, AWS Lambda, and Amazon DynamoDB.
+The API is a small REST API built with API Gateway, Lambda, and DynamoDB. It is intentionally simple so it is easier to learn the serverless application flow.
 
 Base URL:
 
@@ -10,59 +10,52 @@ Base URL:
 https://<api-id>.execute-api.<region>.amazonaws.com/dev
 ```
 
-Current API Version:
+API version:
 
 ```text
 /v1
 ```
 
-All requests and responses use the **JSON** format.
+All requests and responses are JSON.
 
 ---
 
-# API Endpoints
+## Endpoints
 
-| Method | Endpoint         | Description           |
-| ------ | ---------------- | --------------------- |
-| POST   | `/v1/tasks`      | Create a new task     |
-| GET    | `/v1/tasks`      | Retrieve all tasks    |
-| GET    | `/v1/tasks/{id}` | Retrieve a task by ID |
-| PUT    | `/v1/tasks/{id}` | Update a task         |
-| DELETE | `/v1/tasks/{id}` | Delete a task         |
-
----
-
-# Common HTTP Status Codes
-
-| Code | Meaning                        |
-| ---- | ------------------------------ |
-| 200  | Request completed successfully |
-| 201  | Resource created successfully  |
-| 400  | Invalid request                |
-| 404  | Resource not found             |
-| 500  | Internal server error          |
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| POST | `/v1/tasks` | Create a new task |
+| GET | `/v1/tasks` | List all tasks |
+| GET | `/v1/tasks/{id}` | Get one task by ID |
+| PUT | `/v1/tasks/{id}` | Update a task |
+| DELETE | `/v1/tasks/{id}` | Delete a task |
 
 ---
 
-# Create Task
+## Common HTTP status codes
 
-Creates a new task.
+| Code | Meaning |
+| ---- | ------- |
+| 200 | Success |
+| 201 | Created |
+| 400 | Bad request |
+| 404 | Not found |
+| 500 | Internal server error |
 
-## Request
+---
 
-**Method**
+## Create a task
 
-```text
-POST
+Use this endpoint to add a new task.
+
+### Request
+
+```http
+POST /v1/tasks
+Content-Type: application/json
 ```
 
-**Endpoint**
-
-```text
-/v1/tasks
-```
-
-### Request Body
+Body example:
 
 ```json
 {
@@ -71,29 +64,19 @@ POST
 }
 ```
 
-### cURL Example
+cURL example:
 
 ```bash
 curl -X POST \
-https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks \
--H "Content-Type: application/json" \
--d '{
-  "title":"Study AWS",
-  "description":"Complete Module 8"
-}'
+  https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title":"Study AWS",
+    "description":"Complete Module 8"
+  }'
 ```
 
----
-
-## Successful Response
-
-Status Code
-
-```text
-201 Created
-```
-
-Example
+### Success response
 
 ```json
 {
@@ -109,51 +92,23 @@ Example
 
 ---
 
-## Possible Errors
+## List tasks
 
-| Status | Reason                |
-| ------ | --------------------- |
-| 400    | Invalid request body  |
-| 500    | Internal server error |
+This endpoint returns all tasks.
 
----
+### Request
 
-# List Tasks
-
-Returns all tasks.
-
-## Request
-
-**Method**
-
-```text
-GET
+```http
+GET /v1/tasks
 ```
 
-**Endpoint**
-
-```text
-/v1/tasks
-```
-
-### cURL Example
+cURL example:
 
 ```bash
-curl \
-https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks
+curl https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks
 ```
 
----
-
-## Successful Response
-
-Status Code
-
-```text
-200 OK
-```
-
-Example
+### Success response
 
 ```json
 {
@@ -171,56 +126,23 @@ Example
 
 ---
 
-## Possible Errors
+## Get one task
 
-| Status | Reason                |
-| ------ | --------------------- |
-| 500    | Internal server error |
+Use the task ID to retrieve a single record.
 
----
+### Request
 
-# Get Task
-
-Returns a single task.
-
-## Request
-
-**Method**
-
-```text
-GET
+```http
+GET /v1/tasks/{id}
 ```
 
-**Endpoint**
-
-```text
-/v1/tasks/{id}
-```
-
-### Path Parameter
-
-| Name | Type   | Required |
-| ---- | ------ | -------- |
-| id   | String | Yes      |
-
-### cURL Example
+cURL example:
 
 ```bash
-curl \
-https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/4d0c5b3d-6a92-4f73-a8d2-11a5d2d8e8ef
+curl https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/4d0c5b3d-6a92-4f73-a8d2-11a5d2d8e8ef
 ```
 
----
-
-## Successful Response
-
-Status Code
-
-```text
-200 OK
-```
-
-Example
+### Success response
 
 ```json
 {
@@ -236,34 +158,18 @@ Example
 
 ---
 
-## Possible Errors
+## Update a task
 
-| Status | Reason                |
-| ------ | --------------------- |
-| 404    | Task not found        |
-| 500    | Internal server error |
+Use PUT to change an existing task.
 
----
+### Request
 
-# Update Task
-
-Updates an existing task.
-
-## Request
-
-**Method**
-
-```text
-PUT
+```http
+PUT /v1/tasks/{id}
+Content-Type: application/json
 ```
 
-**Endpoint**
-
-```text
-/v1/tasks/{id}
-```
-
-### Request Body
+Body example:
 
 ```json
 {
@@ -273,30 +179,20 @@ PUT
 }
 ```
 
-### cURL Example
+cURL example:
 
 ```bash
 curl -X PUT \
-https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/4d0c5b3d-6a92-4f73-a8d2-11a5d2d8e8ef \
--H "Content-Type: application/json" \
--d '{
-  "title":"Study Terraform",
-  "description":"Complete Module 9",
-  "status":"IN_PROGRESS"
-}'
+  https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/4d0c5b3d-6a92-4f73-a8d2-11a5d2d8e8ef \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title":"Study Terraform",
+    "description":"Complete Module 9",
+    "status":"IN_PROGRESS"
+  }'
 ```
 
----
-
-## Successful Response
-
-Status Code
-
-```text
-200 OK
-```
-
-Example
+### Success response
 
 ```json
 {
@@ -306,52 +202,23 @@ Example
 
 ---
 
-## Possible Errors
+## Delete a task
 
-| Status | Reason                |
-| ------ | --------------------- |
-| 400    | Invalid request body  |
-| 404    | Task not found        |
-| 500    | Internal server error |
+Use DELETE to remove a task.
 
----
+### Request
 
-# Delete Task
-
-Deletes an existing task.
-
-## Request
-
-**Method**
-
-```text
-DELETE
+```http
+DELETE /v1/tasks/{id}
 ```
 
-**Endpoint**
-
-```text
-/v1/tasks/{id}
-```
-
-### cURL Example
+cURL example:
 
 ```bash
-curl -X DELETE \
-https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/4d0c5b3d-6a92-4f73-a8d2-11a5d2d8e8ef
+curl -X DELETE https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/4d0c5b3d-6a92-4f73-a8d2-11a5d2d8e8ef
 ```
 
----
-
-## Successful Response
-
-Status Code
-
-```text
-200 OK
-```
-
-Example
+### Success response
 
 ```json
 {
@@ -361,27 +228,18 @@ Example
 
 ---
 
-## Possible Errors
+## Response format
 
-| Status | Reason                |
-| ------ | --------------------- |
-| 404    | Task not found        |
-| 500    | Internal server error |
-
----
-
-# Response Format
-
-All successful responses follow the same structure.
+Successful responses follow the same pattern:
 
 ```json
 {
-  "message": "<description>",
+  "message": "Description of the result",
   "data": {}
 }
 ```
 
-Error responses follow a consistent format.
+Error responses usually look like:
 
 ```json
 {
@@ -389,75 +247,22 @@ Error responses follow a consistent format.
 }
 ```
 
-Maintaining a consistent response format simplifies client-side development and debugging.
+This consistent format makes debugging easier for both humans and client applications.
 
 ---
 
-# Headers
+## Headers
 
-Every request should include:
+Include this header for JSON requests:
 
 ```http
 Content-Type: application/json
 ```
 
-Future versions may also require:
-
-```http
-Authorization: Bearer <JWT Token>
-```
-
-once authentication is introduced.
+Future versions may require authentication headers once security is added.
 
 ---
 
-# API Versioning
+## Beginner note
 
-The API is versioned using the URI.
-
-Current version:
-
-```text
-/v1
-```
-
-Example:
-
-```text
-/v1/tasks
-```
-
-This strategy allows future versions (such as `/v2`) to introduce new features or breaking changes without affecting existing clients.
-
----
-
-# Future Enhancements
-
-Planned API improvements include:
-
-- Authentication with Amazon Cognito
-- Request validation
-- Pagination
-- Filtering and sorting
-- Search by task title
-- File attachments using Amazon S3
-- OpenAPI (Swagger) specification
-- Rate limiting
-- Request tracing with AWS X-Ray
-
----
-
-# Testing the API
-
-After deployment, verify the following scenarios:
-
-- Create a task
-- Retrieve all tasks
-- Retrieve a task by ID
-- Update a task
-- Delete a task
-- Attempt to retrieve a deleted task
-- Submit an invalid request body
-- Verify responses in CloudWatch Logs
-
-Successful completion of these tests confirms that the API, Lambda function, IAM permissions, and DynamoDB integration are working correctly.
+This API is intentionally simple. It gives you a clear model for how API Gateway, Lambda, and DynamoDB work together in a real serverless application.

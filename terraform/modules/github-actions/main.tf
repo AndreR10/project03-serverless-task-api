@@ -70,6 +70,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     actions = [
       "s3:ListBucket",
       "s3:GetBucketLocation",
+      "s3:GetBucketPolicy",
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject"
@@ -156,6 +157,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
 
     actions = [
       "dynamodb:DescribeTable",
+      "dynamodb:DescribeTimeToLive",
       "dynamodb:CreateTable",
       "dynamodb:UpdateTable",
       "dynamodb:DeleteTable",
@@ -172,11 +174,23 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
+    sid    = "SsmParameterMetadata" 
+    effect = "Allow"
+
+    actions = [
+      "ssm:DescribeParameters"
+    ]
+
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
     sid    = "SsmParameterManagement"
     effect = "Allow"
 
     actions = [
-      "ssm:DescribeParameters",
       "ssm:GetParameter",
       "ssm:GetParameters",
       "ssm:PutParameter",
@@ -198,6 +212,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "sns:Subscribe",
       "sns:SetTopicAttributes",
       "sns:ListSubscriptionsByTopic",
+      "sns:ListTagsForResource",
       "sns:TagResource",
       "sns:UntagResource"
     ]

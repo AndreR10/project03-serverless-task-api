@@ -1,50 +1,32 @@
-# Troubleshooting Guide
+# Troubleshooting guide
 
-## Overview
+This document is for the most common beginner problems in this project.
 
-This document describes common issues encountered while developing and deploying the **Serverless Task Management API**, explains why they occur, and provides steps to resolve them.
-
----
-
-# Troubleshooting Workflow
-
-When something isn't working, follow this order:
+The best debugging flow is usually:
 
 ```text
-Client
-
-↓
-
-API Gateway
-
-↓
-
-Lambda
-
-↓
-
-CloudWatch Logs
-
-↓
-
-IAM Permissions
-
-↓
-
-DynamoDB
-
-↓
-
-Terraform Configuration
+GitHub Actions or local deploy
+        |
+        v
+Terraform validation / plan
+        |
+        v
+AWS resource check
+        |
+        v
+CloudWatch logs
+        |
+        v
+IAM permissions and configuration
 ```
 
-This top-down approach helps isolate the source of the problem efficiently.
+This order helps you isolate the root cause quickly.
 
 ---
 
-# AWS Credentials Issues
+## 1) AWS credentials errors
 
-## Error
+### Symptom
 
 ```text
 No valid credential sources found
@@ -56,556 +38,255 @@ or
 Invalid provider configuration
 ```
 
-## Cause
+### Cause
 
-Terraform cannot authenticate with AWS because credentials are missing or invalid.
+Terraform cannot authenticate with AWS.
 
----
+### Fix
 
-## Resolution
-
-Verify AWS CLI:
+Check your AWS identity:
 
 ```bash
 aws sts get-caller-identity
 ```
 
-If this fails, configure credentials:
+If it fails, configure AWS CLI:
 
 ```bash
 aws configure
 ```
 
-Provide:
-
-- AWS Access Key ID
-- AWS Secret Access Key
-- Region
-- Output format
-
-Verify again:
-
-```bash
-aws sts get-caller-identity
-```
+Then verify again.
 
 ---
 
-## Prevention
+## 2) Terraform init or validate fails
 
-Always verify credentials before running Terraform.
-
----
-
-# Provider Configuration Error
-
-## Error
+### Symptom
 
 ```text
-Provider requires explicit configuration
+Error: failed to validate
 ```
 
-## Cause
+or provider-related messages.
 
-The AWS provider block is missing.
+### Cause
 
----
+Configuration is missing or invalid.
 
-## Resolution
+### Fix
 
-Verify that `providers.tf` contains:
-
-```hcl
-provider "aws" {
-  region = var.region
-}
-```
-
-Then run:
+Run:
 
 ```bash
 terraform init
+terraform validate
 ```
 
----
-
-## Prevention
-
-Always initialize Terraform after modifying provider configuration.
-
----
-
-# Lambda Packaging Issues
-
-## Error
-
-```text
-Runtime.ImportModuleError
-```
-
-or
-
-```text
-Cannot find module
-```
-
-## Cause
-
-The deployment ZIP does not contain the expected directory structure or required dependencies.
-
----
-
-## Resolution
-
-Rebuild the deployment package:
+If needed, also format the files:
 
 ```bash
-cd scripts
-
-./build.sh
-```
-
-Verify the ZIP contains:
-
-```text
-src/
-package.json
-node_modules/
-```
-
-Deploy again:
-
-```bash
-terraform apply
+terraform fmt -recursive
 ```
 
 ---
 
-## Prevention
+## 3) GitHub OIDC authentication fails
 
-Always rebuild the package after changing application code or dependencies.
+### Symptom
+
+GitHub Actions cannot assume the AWS role.
+
+### Cause
+
+The trust policy does not match the repository or branch, or the GitHub variables are wrong.
+
+### Fix
+
+Check:
+
+- `OWNER_ID` is correct
+- `REPOSITORY_ID` is correct
+- the workflow uses `vars.OWNER_ID` and `vars.REPOSITORY_ID`
+- the branch matches the trust policy
+- the role ARN exists and is valid
+
+The trust policy should target the exact repository and branch, not a broad wildcard.
 
 ---
 
-# Internal Server Error (500)
+## 4) Lambda returns 500
 
-## Error
+### Symptom
 
-```text
+```json
 {
-  "message":"Internal server error"
+  "message": "Internal server error"
 }
 ```
 
-## Cause
+### Cause
 
-The Lambda function threw an exception while processing the request.
+The Lambda function threw an exception.
 
-Common reasons include:
+Common reasons:
 
-- Missing environment variables
-- Invalid DynamoDB table name
-- JavaScript runtime errors
-- Missing IAM permissions
-- Invalid request body
+- missing environment variables
+- invalid DynamoDB table name
+- Node.js runtime error
+- IAM permission issue
+- broken request payload
 
----
+### Fix
 
-## Resolution
+Check CloudWatch Logs for the Lambda function.
 
-Open:
-
-AWS Console
-
-↓
-
-CloudWatch
-
-↓
-
-Log Groups
-
-↓
-
-Select the Lambda log group
-
-Review the latest log stream for the stack trace.
-
-Correct the issue and redeploy.
+Look for the stack trace and fix the code or configuration.
 
 ---
 
-## Prevention
+## 5) Lambda cannot access DynamoDB
 
-Check CloudWatch Logs immediately whenever a 500 response occurs.
-
----
-
-# Access Denied to DynamoDB
-
-## Error
+### Symptom
 
 ```text
 AccessDeniedException
 ```
 
-## Cause
+### Cause
 
-The Lambda execution role does not have permission to access the DynamoDB table.
+The Lambda execution role does not have the required DynamoDB permissions.
 
----
+### Fix
 
-## Resolution
+Verify the IAM role has permission to:
 
-Verify the IAM policy includes:
+- `dynamodb:GetItem`
+- `dynamodb:PutItem`
+- `dynamodb:UpdateItem`
+- `dynamodb:DeleteItem`
+- `dynamodb:Scan`
 
-- GetItem
-- PutItem
-- UpdateItem
-- DeleteItem
-- Scan
-
-Confirm the policy references the correct table ARN.
-
-Run:
+Then run:
 
 ```bash
 terraform apply
 ```
 
-after updating the policy.
-
 ---
 
-## Prevention
+## 6) API Gateway returns 403
 
-Follow the Principle of Least Privilege while ensuring all required actions are included.
-
----
-
-# API Gateway Returns 403
-
-## Error
+### Symptom
 
 ```text
 403 Forbidden
 ```
 
-## Cause
+### Cause
 
-API Gateway is not authorized to invoke the Lambda function.
+API Gateway is not allowed to invoke the Lambda function.
 
----
+### Fix
 
-## Resolution
-
-Verify the `aws_lambda_permission` resource exists.
-
-Example:
-
-```hcl
-resource "aws_lambda_permission" "apigateway" {
-  ...
-}
-```
-
-Run:
-
-```bash
-terraform apply
-```
+Check the Lambda permission resource and redeploy or apply Terraform again.
 
 ---
 
-## Prevention
+## 7) API Gateway returns 404
 
-Always create a Lambda permission whenever integrating API Gateway with Lambda.
-
----
-
-# API Gateway Returns 404
-
-## Error
+### Symptom
 
 ```text
 404 Not Found
 ```
 
-## Possible Causes
+### Cause
 
-- Incorrect URL
-- Incorrect resource path
-- API not deployed
-- Wrong stage name
+The route is wrong or the API stage was not deployed.
 
----
+### Fix
 
-## Resolution
+Check:
 
-Verify:
+- correct URL
+- correct route
+- API Gateway stage exists
+- deploy happened after changes
 
-- API Gateway deployment exists
-- Stage name is `dev`
-- URL matches Terraform output
-
-Example:
+Example route:
 
 ```text
-https://<api-id>.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks
+https://<api-id>.execute-api.<region>.amazonaws.com/dev/v1/tasks
 ```
 
-If resources changed:
+---
+
+## 8) Changes are not reflected after deploy
+
+### Symptom
+
+The code changes are not visible in the live API.
+
+### Cause
+
+Terraform or API Gateway deployment did not detect the update.
+
+### Fix
+
+Rebuild the Lambda package and reapply Terraform:
 
 ```bash
-terraform apply
-```
-
-to redeploy the API.
-
----
-
-# API Changes Not Reflected
-
-## Symptom
-
-Infrastructure deploys successfully, but API behavior does not change.
-
----
-
-## Cause
-
-API Gateway deployment was not recreated.
-
----
-
-## Resolution
-
-Ensure the deployment resource includes a trigger, for example:
-
-```hcl
-triggers = {
-  redeployment = sha1(jsonencode(...))
-}
-```
-
-This forces a new deployment whenever API resources change.
-
-Run:
-
-```bash
-terraform apply
-```
-
----
-
-## Prevention
-
-Use deployment triggers so Terraform automatically redeploys the API when necessary.
-
----
-
-# Lambda Code Changes Not Applied
-
-## Symptom
-
-Terraform completes successfully, but Lambda still executes old code.
-
----
-
-## Cause
-
-The deployment package was not rebuilt or Terraform did not detect a change.
-
----
-
-## Resolution
-
-Rebuild:
-
-```bash
-cd scripts
-
+cd app
+npm install
+cd ../scripts
 ./build.sh
-```
-
-Run:
-
-```bash
+cd ../terraform
 terraform plan
-```
-
-Verify the Lambda function will be updated.
-
-Apply:
-
-```bash
 terraform apply
 ```
 
----
-
-## Prevention
-
-Automate ZIP creation using Terraform's `archive_file` data source and ensure `source_code_hash` is configured.
+If needed, redeploy the API Gateway stage.
 
 ---
 
-# Terraform Detects Unexpected Changes
+## 9) `terraform plan` shows unexpected changes
 
-## Symptom
+### Cause
 
-`terraform plan` shows changes even though nothing was modified.
+This often means:
 
----
+- manual changes were made in AWS console
+- the state file is stale or drifted
+- provider versions changed
 
-## Possible Causes
+### Fix
 
-- Manual changes in AWS Console
-- Resource drift
-- Provider version differences
-
----
-
-## Resolution
-
-Compare Terraform configuration with the AWS Console.
-
-Avoid manually editing resources managed by Terraform.
+Review the plan carefully. If resources were changed manually, reconcile them with Terraform instead of editing AWS directly.
 
 ---
 
-## Prevention
+## 10) CloudWatch logs are missing
 
-Once Terraform manages a resource, use Terraform exclusively for updates.
+### Cause
 
----
+The function was not invoked or the Lambda role is missing logging permissions.
 
-# Terraform State Issues
+### Fix
 
-## Symptom
+Make sure the execution role has:
 
-Terraform cannot find existing resources or wants to recreate them unexpectedly.
+- `logs:CreateLogGroup`
+- `logs:CreateLogStream`
+- `logs:PutLogEvents`
 
----
-
-## Cause
-
-The local state file is missing, corrupted, or out of sync.
+Also verify the Lambda function is actually being called.
 
 ---
 
-## Resolution
+## Useful commands
 
-Verify:
-
-```text
-terraform.tfstate
-```
-
-exists.
-
-If collaborating with others, use a remote backend (introduced in a later phase).
-
----
-
-## Prevention
-
-Do not delete the state file while the infrastructure is still managed.
-
-Do not manually edit the state file.
-
----
-
-# Common cURL Issues
-
-## Problem
-
-Request fails with:
-
-```text
-Could not resolve host
-```
-
-### Resolution
-
-Verify:
-
-- Correct API URL
-- Proper quotation marks
-- Internet connectivity
-
----
-
-## Problem
-
-```text
-Missing Authentication Token
-```
-
-### Resolution
-
-Usually indicates:
-
-- Incorrect URL
-- Incorrect resource path
-- Wrong HTTP method
-- API not deployed
-
-Verify the endpoint and redeploy if necessary.
-
----
-
-# CloudWatch Logs Not Appearing
-
-## Cause
-
-The Lambda function has not been invoked, or the execution role lacks logging permissions.
-
----
-
-## Resolution
-
-1. Invoke the Lambda function.
-2. Verify the IAM role includes:
-
-- logs:CreateLogGroup
-- logs:CreateLogStream
-- logs:PutLogEvents
-
----
-
-## Prevention
-
-Attach the AWS managed policy:
-
-```text
-AWSLambdaBasicExecutionRole
-```
-
-or grant equivalent least-privilege permissions.
-
----
-
-# Debugging Checklist
-
-Before making code changes, verify:
-
-- ☐ AWS credentials are valid
-- ☐ Terraform configuration validates
-- ☐ Terraform plan is correct
-- ☐ Lambda package rebuilt
-- ☐ API deployed
-- ☐ Environment variables configured
-- ☐ IAM permissions correct
-- ☐ CloudWatch logs reviewed
-- ☐ DynamoDB table exists
-- ☐ API URL is correct
-
----
-
-# Useful Commands
-
-Verify AWS identity:
+Check AWS identity:
 
 ```bash
 aws sts get-caller-identity
@@ -635,35 +316,37 @@ Apply changes:
 terraform apply
 ```
 
-Destroy infrastructure:
+Destroy resources:
 
 ```bash
 terraform destroy
 ```
 
-Build the Lambda package:
+---
 
-```bash
-cd scripts
+## Beginner checklist before troubleshooting
 
-./build.sh
-```
+Before jumping into fixes, confirm:
+
+- [ ] AWS credentials are valid
+- [ ] Terraform config validates
+- [ ] Terraform plan shows expected changes
+- [ ] API Gateway is deployed
+- [ ] Lambda role has the right permissions
+- [ ] CloudWatch logs have no hidden errors
+- [ ] the API URL is correct
+- [ ] the GitHub OIDC values are correct
 
 ---
 
-# Lessons Learned
+## Beginner takeaway
 
-Throughout Phase 1, the following issues were encountered and resolved:
+Most problems in this project are usually caused by a small mismatch:
 
-- AWS credential configuration
-- Terraform provider configuration
-- Lambda deployment packaging
-- API Gateway deployment updates
-- Lambda permissions for API Gateway
-- IAM permissions for DynamoDB
-- Internal Server Error diagnosis using CloudWatch Logs
-- Terraform dependency management
-- Automatic Lambda ZIP packaging
-- API Gateway method generation using `for_each`
+- wrong AWS credentials
+- wrong route or URL
+- wrong IAM permission
+- bad Terraform config
+- wrong GitHub variable value
 
-Understanding how to diagnose and resolve these issues is an essential Cloud Engineering skill and is often more valuable than simply knowing how to create the infrastructure.
+Fixing those usually solves the issue quickly.

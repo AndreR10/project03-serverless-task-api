@@ -3,6 +3,9 @@ environment = "dev"
 project_name = "task-api"
 alert_email = "your-email@example.com"
 
+# Local development values
+# This file is only for local Terraform runs.
+# GitHub Actions does not need it because values are passed as TF_VAR_* environment variables.
 # GitHub repository configuration
 github_owner         = "YOUR_GITHUB_USERNAME"
 github_owner_id      = "YOUR_GITHUB_OWNER_ID"

@@ -1,263 +1,197 @@
 # Architecture
 
-## Overview
+This project is a simple serverless application built on AWS. The goal is to make the architecture easy to understand and beginner-friendly.
 
-The **Serverless Task Management API** is a cloud-native application built using AWS serverless services. The project follows a layered architecture to separate infrastructure, business logic, and data access while keeping the application simple enough for beginners.
+The system combines:
 
-The primary objective is to demonstrate AWS architecture and Infrastructure as Code (Terraform) rather than advanced application development.
+- GitHub Actions for automation
+- OpenID Connect (OIDC) for AWS login
+- Terraform for infrastructure provisioning
+- API Gateway for the public API
+- Lambda for business logic
+- DynamoDB for data storage
+- CloudWatch for logs and monitoring
 
 ---
 
-# High-Level Architecture
+## High-level view
 
 ```text
-                        Client
-
-                           │
-
-                   HTTPS Request
-
-                           │
-
-                    Amazon API Gateway
-
-                           │
-
-                 REST API (/v1/tasks)
-
-                           │
-
-                     AWS Lambda Router
-
-                           │
-
-          ┌────────────────┴────────────────┐
-
-          │                                 │
-
-      Service Layer                  Utility Layer
-
-          │
-
-     Repository Layer
-
-          │
-
-     Amazon DynamoDB
-
-          │
-
-   Amazon CloudWatch Logs
+Developer
+   |
+   | git push
+   v
+GitHub
+   |
+   v
+GitHub Actions
+   |
+   | OIDC token
+   v
+AWS IAM Role
+   |
+   v
+Terraform
+   |
+   +--> API Gateway
+   +--> Lambda
+   +--> DynamoDB
+   +--> S3
+   +--> SSM
+   +--> CloudWatch
+   +--> IAM
+   |
+   v
+AWS
 ```
 
 ---
 
-# Request Flow
+## What happens when a request is made?
 
-The following sequence describes how a typical request is processed.
-
-## Example: Create Task
+A typical request follows this flow:
 
 ```text
 Client
-
-↓
-
-POST /v1/tasks
-
-↓
-
-Amazon API Gateway
-
-↓
-
-AWS Lambda
-
-↓
-
-Task Service
-
-↓
-
-Task Repository
-
-↓
-
-Amazon DynamoDB
-
-↓
-
-Response
-
-↓
-
+  |
+  v
 API Gateway
-
-↓
-
-Client
-```
-
----
-
-# Component Responsibilities
-
-## Amazon API Gateway
-
-Responsibilities:
-
-- Exposes the REST API
-- Receives HTTPS requests
-- Performs request routing
-- Invokes AWS Lambda using Lambda Proxy Integration
-- Returns HTTP responses
-
-Why it was chosen:
-
-- Fully managed
-- Serverless
-- Scales automatically
-- Integrated with Lambda
-- Pay-per-request pricing
-
----
-
-## AWS Lambda
-
-Responsibilities:
-
-- Executes application logic
-- Routes requests based on HTTP method
-- Calls the service layer
-- Returns structured responses
-- Logs execution details
-
-Architecture pattern:
-
-```text
-Handler
-
-↓
-
-Service
-
-↓
-
-Repository
-
-↓
-
+  |
+  v
+Lambda function
+  |
+  v
+Task service logic
+  |
+  v
 DynamoDB
+  |
+  v
+HTTP response
 ```
 
-Benefits:
-
-- No servers to manage
-- Automatic scaling
-- Pay only for execution time
-
----
-
-## Service Layer
-
-Responsibilities:
-
-- Business logic
-- Input validation
-- Creating task IDs
-- Preparing responses
-- Coordinating repository operations
-
-This layer keeps business rules separate from infrastructure code.
-
----
-
-## Repository Layer
-
-Responsibilities:
-
-- Interacts with DynamoDB
-- Executes CRUD operations
-- Isolates database access from business logic
-
-Benefits:
-
-- Easier maintenance
-- Easier testing
-- Better separation of concerns
-
----
-
-## Amazon DynamoDB
-
-Responsibilities:
-
-- Stores task records
-- Provides highly available NoSQL storage
-- Supports serverless workloads
-
-Current table design:
-
-| Attribute   | Type   | Purpose          |
-| ----------- | ------ | ---------------- |
-| id          | String | Partition Key    |
-| title       | String | Task title       |
-| description | String | Task description |
-| status      | String | Task status      |
-
-Billing mode:
+Example: create a task
 
 ```text
-PAY_PER_REQUEST
+Client sends POST /v1/tasks
+        |
+        v
+API Gateway receives the request
+        |
+        v
+Lambda function executes
+        |
+        v
+Service layer validates the payload
+        |
+        v
+Repository writes to DynamoDB
+        |
+        v
+Response returns to the client
 ```
-
-Chosen because it fits AWS Free Tier usage and removes capacity management.
 
 ---
 
-## Amazon CloudWatch Logs
+## Main components
 
-Responsibilities:
+### GitHub Actions
 
-- Store Lambda logs
-- Capture runtime errors
-- Assist troubleshooting
-- Support operational monitoring
+GitHub Actions is used to automate deployment. It is the place where the workflow starts when you push changes to the repository.
 
-Current usage:
-
-- Console logging
-- Error logging
-
-Future phases will add:
-
-- Metrics
-- Alarms
-- Dashboards
+It does not need long-lived AWS keys because it uses OIDC to get a short-lived token from AWS.
 
 ---
 
-# Layered Application Architecture
+### Terraform
 
-The backend follows a layered design.
+Terraform defines all AWS resources in code. This makes the infrastructure reproducible instead of manually creating resources in the AWS console.
 
-```text
-Handler
+The Terraform configuration creates:
 
-↓
+- API Gateway
+- Lambda
+- DynamoDB
+- S3 bucket
+- SSM parameters
+- IAM policies and roles
+- OIDC provider and deployment role
 
-Service
+---
 
-↓
+### API Gateway
 
-Repository
+API Gateway exposes the API to the internet and routes requests to Lambda.
 
-↓
+It handles:
 
-Database
-```
+- HTTP methods
+- URL paths
+- request forwarding
+- response return
 
-Each layer has a single responsibility.
+---
+
+### Lambda
+
+Lambda is where the actual application logic lives.
+
+It receives requests from API Gateway, processes them, interacts with DynamoDB, and returns a response.
+
+This is the serverless part of the solution: there is no server to maintain.
+
+---
+
+### DynamoDB
+
+DynamoDB stores the task data.
+
+The table contains records like:
+
+| Field | Example | Purpose |
+| ----- | ------- | ------- |
+| id | uuid | Unique task identifier |
+| title | Study AWS | Task title |
+| description | Complete Module 8 | Task details |
+| status | PENDING | Current state |
+
+---
+
+### CloudWatch
+
+CloudWatch stores logs from Lambda and helps with observability.
+
+It is used for:
+
+- debugging errors
+- checking request flow
+- reviewing Lambda logs
+- monitoring deployments
+
+---
+
+### IAM and OIDC
+
+IAM controls who can do what in AWS. In this project, the GitHub Actions workflow does not use static AWS keys.
+
+Instead, GitHub authenticates through OIDC and AWS grants only the allowed role for the repository and branch.
+
+This is more secure than storing AWS secrets in GitHub.
+
+---
+
+## Why this architecture?
+
+This project is designed to teach the basic pattern used in real-world serverless systems:
+
+- app code runs in Lambda
+- API Gateway exposes the interface
+- DynamoDB stores state
+- Terraform manages infrastructure
+- GitHub Actions automates deployment
+- OIDC keeps AWS access secure
+
+That combination is common in modern cloud-native projects.
 
 ## Handler
 

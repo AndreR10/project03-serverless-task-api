@@ -1,263 +1,118 @@
-# AWS Cost Estimation
+# Cost estimation
 
-## Overview
-
-This document explains the expected AWS costs for the **Serverless Task Management API**, how the AWS Free Tier applies to this project, and the techniques used to minimize expenses.
-
-The project has been intentionally designed so that normal development and learning activities remain within the AWS Free Tier whenever possible.
+This project is designed to stay inexpensive while you are learning. Most of the AWS services used here are serverless, which means they usually do not run all the time and do not cost much during normal development.
 
 ---
 
-# Architecture
+## Why this project is cheap
 
-The application currently consists of the following AWS services:
+The main cost-saving choices are:
 
-```text
-                 API Gateway
-                       │
-                       ▼
-                 AWS Lambda
-                       │
-                       ▼
-                  DynamoDB
-                       │
-                       ▼
-               CloudWatch Logs
-```
+- Lambda runs only when the API is called
+- API Gateway charges for requests, not for running servers
+- DynamoDB is configured for small, simple workloads
+- no EC2 instances need to stay running
+- no always-on infrastructure is required
 
-Only managed serverless services are used.
-
-There are:
-
-- No EC2 instances
-- No load balancers
-- No NAT Gateway
-- No VPC
-- No always-running resources
-
-This significantly reduces operational costs.
+This is typical of a serverless application.
 
 ---
 
-# Monthly Cost Estimate
+## Rough monthly estimate
 
-The following estimates assume typical learning usage:
+For a low-usage learning project, the estimated monthly cost is usually close to zero unless you are making lots of requests or storing large amounts of data.
 
-- A few hundred API requests per day
-- Small DynamoDB records
-- Limited CloudWatch logging
-- One developer
+| Service | Expected cost |
+| ------- | ------------- |
+| AWS Lambda | Very low |
+| API Gateway | Very low |
+| DynamoDB | Very low |
+| CloudWatch Logs | Low, but usually small |
+| IAM | $0 |
+| S3 | Usually very low |
+| Terraform | $0 |
+| Total | Usually near $0 for learning usage |
 
-| Service             | Estimated Monthly Cost |
-| ------------------- | ---------------------: |
-| AWS Lambda          |                  €0.00 |
-| API Gateway         |                  €0.00 |
-| DynamoDB            |                  €0.00 |
-| IAM                 |                  €0.00 |
-| CloudWatch Logs     |                 ~€0.00 |
-| Terraform           |                  €0.00 |
-| **Estimated Total** |             **~€0.00** |
-
-For most learners, the project should remain entirely within the Free Tier.
+This is a rough estimate and depends on actual usage.
 
 ---
 
-# AWS Lambda
+## AWS Lambda cost
 
-## Pricing Model
+Lambda charges are based on:
 
-Lambda charges for:
+- number of requests
+- execution time
+- memory assigned to the function
 
-- Number of requests
-- Execution duration
-- Memory allocated
-
-Current configuration:
-
-| Setting | Value        |
-| ------- | ------------ |
-| Runtime | Node.js 24.x |
-| Memory  | 128 MB       |
-| Timeout | 10 seconds   |
+This project keeps memory low and function execution simple, which helps keep costs down.
 
 ---
 
-## AWS Free Tier
+## API Gateway cost
 
-Every month:
+API Gateway normally charges by request volume and data transfer.
 
-- 1,000,000 requests
-- 400,000 GB-seconds of compute
-
-For this project, reaching these limits during normal learning is very unlikely.
+For a small project used by one developer or a few test requests, the cost is typically very low.
 
 ---
 
-## Cost Optimization
+## DynamoDB cost
 
-Current optimizations:
+DynamoDB charges are based on:
 
-- Small memory allocation
-- Fast execution
-- Lightweight dependencies
-- No unnecessary processing
+- reads and writes
+- storage used
+- table usage patterns
 
-Future improvements:
-
-- Reduce cold starts
-- Optimize package size
-- Reuse SDK clients
+This project does not store large datasets, so the cost remains low.
 
 ---
 
-# Amazon API Gateway
+## CloudWatch cost
 
-## Pricing Model
+CloudWatch is useful for logs and debugging, but log volume can increase costs if you log too much.
 
-Charges are based on:
+To keep it cheap:
 
-- Number of API requests
-- Data transferred out
-
----
-
-## AWS Free Tier
-
-Eligible accounts receive:
-
-- 1,000,000 REST API requests per month (during the Free Tier eligibility period)
-
-Typical development usage remains well below this limit.
+- keep logs useful and concise
+- avoid logging large payloads unnecessarily
+- clean up unused logs when possible
 
 ---
 
-## Cost Optimization
+## IAM cost
 
-Current practices:
-
-- Small JSON payloads
-- Minimal endpoints
-- No unnecessary API calls
+IAM does not normally cost money by itself. The main cost is not the IAM service itself, but the AWS resources it allows you to use.
 
 ---
 
-# Amazon DynamoDB
+## Terraform cost
 
-## Pricing Model
-
-Current billing mode:
-
-```text
-On-Demand
-```
-
-Charges depend on:
-
-- Read requests
-- Write requests
-- Data storage
+Terraform is open source and free to use locally. The real cost comes from the AWS resources it creates, not from Terraform itself.
 
 ---
 
-## AWS Free Tier
+## What can increase cost?
 
-The workload generated by this project is expected to stay comfortably within Free Tier limits for learning purposes.
+The biggest cost drivers are usually:
 
----
+- too many API calls
+- large CloudWatch log volumes
+- many Lambda executions
+- large DynamoDB data growth
+- accidental creation of expensive resources
 
-## Cost Optimization
-
-Current choices:
-
-- Small items
-- Single table
-- On-Demand billing
-- No Global Secondary Indexes
-- No Streams
-- No backups
-
-Future phases may introduce additional features that could affect costs.
+This project avoids those issues by staying simple and serverless.
 
 ---
 
-# Amazon CloudWatch Logs
+## Beginner takeaway
 
-## Pricing Model
+The project is designed to be low cost and beginner-friendly. In most cases, this kind of stack stays within free-tier-friendly usage while you are learning.
 
-CloudWatch charges for:
+If you keep the app small and avoid unnecessary resources, the bill should stay very manageable.
 
-- Log ingestion
-- Log storage
-
-Current project:
-
-- Small amount of logging
-- Low invocation frequency
-
-Expected cost:
-
-Approximately zero during development.
-
----
-
-## Cost Optimization
-
-Recommended practices:
-
-- Avoid excessive logging
-- Do not log entire request bodies unless necessary
-- Remove debug logs before production
-- Configure log retention (Phase 2)
-
----
-
-# AWS IAM
-
-IAM has no additional cost.
-
-You can create:
-
-- Users
-- Roles
-- Policies
-
-without incurring charges.
-
----
-
-# Terraform
-
-Terraform is open source and free to use locally.
-
-Costs are generated only by the AWS resources it provisions.
-
----
-
-# What Could Increase Costs?
-
-The following actions may result in charges:
-
-| Activity                                 | Potential Impact               |
-| ---------------------------------------- | ------------------------------ |
-| Millions of API requests                 | API Gateway and Lambda charges |
-| Very large CloudWatch logs               | Increased log storage costs    |
-| Large DynamoDB items                     | Higher storage costs           |
-| Continuous automated testing             | More Lambda executions         |
-| Uploading large files (future S3 module) | Increased storage costs        |
-
----
-
-# Services Not Used (Yet)
-
-The following services are intentionally excluded from Phase 1 because they may increase costs or complexity:
-
-| Service                   | Reason                      |
-| ------------------------- | --------------------------- |
-| Amazon EC2                | Always-running compute      |
-| NAT Gateway               | Hourly charges              |
-| Application Load Balancer | Not required for serverless |
-| Amazon RDS                | More operational overhead   |
-| Amazon ElastiCache        | Not needed                  |
 | AWS Fargate               | Outside the project scope   |
 
 ---
