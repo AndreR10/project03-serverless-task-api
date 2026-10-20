@@ -225,6 +225,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project}-${var.environment}-lambda-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.role_name}",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.project}-${var.environment}-lambda-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.project}-${var.environment}-github-actions-deploy",
       "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
     ]
