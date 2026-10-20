@@ -34,6 +34,8 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
 }
 
 data "aws_iam_policy_document" "github_actions_deploy" {
+  # Each service wildcard is limited to the named project resource below.
+  # The state bucket remains more restricted because it stores Terraform state.
   statement {
     sid    = "TerraformStateBucket"
     effect = "Allow"
@@ -64,15 +66,11 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
-    sid    = "LambdaArtifactBucket"
+    sid    = "LambdaArtifactBucketAccess"
     effect = "Allow"
 
     actions = [
-      "s3:ListBucket",
-      "s3:GetBucket*",
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject"
+      "s3:*"
     ]
 
     resources = [
@@ -104,23 +102,11 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
-    sid    = "LambdaManagement"
+    sid    = "LambdaFunctionManagement"
     effect = "Allow"
 
     actions = [
-      "lambda:CreateFunction",
-      "lambda:Get*",
-      "lambda:ListVersionsByFunction",
-      "lambda:UpdateFunctionCode",
-      "lambda:UpdateFunctionConfiguration",
-      "lambda:DeleteFunction",
-      "lambda:AddPermission",
-      "lambda:RemovePermission",
-      "lambda:InvokeFunction",
-      "lambda:TagResource",
-      "lambda:UntagResource",
-      "lambda:PutFunctionConcurrency",
-      "lambda:DeleteFunctionConcurrency"
+      "lambda:*"
     ]
 
     resources = [
@@ -129,18 +115,11 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
-    sid    = "CloudWatchLogsManagement"
+    sid    = "LambdaLogGroupManagement"
     effect = "Allow"
 
     actions = [
-      "logs:CreateLogGroup",
-      "logs:DescribeLogGroups",
-      "logs:PutRetentionPolicy",
-      "logs:DeleteLogGroup",
-      "logs:TagLogGroup",
-      "logs:CreateLogStream",
-      "logs:DescribeLogStreams",
-      "logs:PutLogEvents"
+      "logs:*"
     ]
 
     resources = [
@@ -154,16 +133,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     effect = "Allow"
 
     actions = [
-      "dynamodb:DescribeTable",
-      "dynamodb:DescribeTimeToLive",
-      "dynamodb:CreateTable",
-      "dynamodb:UpdateTable",
-      "dynamodb:DeleteTable",
-      "dynamodb:TagResource",
-      "dynamodb:UntagResource",
-      "dynamodb:DescribeContinuousBackups",
-      "dynamodb:UpdateContinuousBackups",
-      "dynamodb:ListTagsOfResource"
+      "dynamodb:*"
     ]
 
     resources = [
@@ -189,12 +159,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     effect = "Allow"
 
     actions = [
-      "ssm:GetParameter",
-      "ssm:GetParameters",
-      "ssm:PutParameter",
-      "ssm:DeleteParameter",
-      "ssm:AddTagsToResource",
-      "ssm:ListTagsForResource"
+      "ssm:*"
     ]
 
     resources = var.ssm_parameter_arns
@@ -205,16 +170,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     effect = "Allow"
 
     actions = [
-      "sns:CreateTopic",
-      "sns:DeleteTopic",
-      "sns:GetTopicAttributes",
-      "sns:GetSubscriptionAttributes",
-      "sns:Subscribe",
-      "sns:SetTopicAttributes",
-      "sns:ListSubscriptionsByTopic",
-      "sns:ListTagsForResource",
-      "sns:TagResource",
-      "sns:UntagResource"
+      "sns:*"
     ]
 
     resources = [
@@ -224,20 +180,16 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
-    sid    = "CloudWatchAlarmManagement"
+    sid    = "CloudWatchMonitoringManagement"
     effect = "Allow"
 
     actions = [
-      "cloudwatch:DescribeAlarms",
-      "cloudwatch:ListTagsForResource",
-      "cloudwatch:PutMetricAlarm",
-      "cloudwatch:DeleteAlarms",
-      "cloudwatch:EnableAlarmActions",
-      "cloudwatch:DisableAlarmActions"
+      "cloudwatch:*"
     ]
 
     resources = [
-      "arn:aws:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:*"
+      "arn:aws:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:*",
+      "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.project}-${var.environment}"
     ]
   }
 
@@ -273,6 +225,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project}-${var.environment}-lambda-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.role_name}",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.project}-${var.environment}-lambda-policy",
+      "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
     ]
   }
@@ -328,7 +281,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 resource "aws_iam_policy" "github_actions_deploy" {
   name        = "${var.project}-${var.environment}-github-actions-deploy"
-  description = "Least-privilege deployment policy for the GitHub Actions OIDC role."
+  description = "Project-scoped deployment permissions for GitHub Actions; service actions are restricted by resource ARNs where AWS supports it."
   policy      = data.aws_iam_policy_document.github_actions_deploy.json
 }
 
