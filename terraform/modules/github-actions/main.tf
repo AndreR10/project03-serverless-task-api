@@ -72,6 +72,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "s3:GetBucketLocation",
       "s3:GetBucketPolicy",
       "s3:GetBucketAcl",
+      "s3:GetBucketCors",
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject"
@@ -113,6 +114,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "lambda:CreateFunction",
       "lambda:GetFunction",
       "lambda:GetFunctionConfiguration",
+      "lambda:ListVersionsByFunction",
       "lambda:UpdateFunctionCode",
       "lambda:UpdateFunctionConfiguration",
       "lambda:DeleteFunction",
@@ -255,6 +257,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "iam:UpdateAssumeRolePolicy",
       "iam:CreatePolicy",
       "iam:GetPolicy",
+      "iam:GetPolicyVersion",
       "iam:DeletePolicy",
       "iam:CreatePolicyVersion",
       "iam:DeletePolicyVersion",
