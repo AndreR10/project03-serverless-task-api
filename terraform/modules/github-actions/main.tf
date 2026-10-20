@@ -69,10 +69,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
 
     actions = [
       "s3:ListBucket",
-      "s3:GetBucketLocation",
-      "s3:GetBucketPolicy",
-      "s3:GetBucketAcl",
-      "s3:GetBucketCors",
+      "s3:GetBucket*",
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject"
@@ -112,8 +109,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
 
     actions = [
       "lambda:CreateFunction",
-      "lambda:GetFunction",
-      "lambda:GetFunctionConfiguration",
+      "lambda:Get*",
       "lambda:ListVersionsByFunction",
       "lambda:UpdateFunctionCode",
       "lambda:UpdateFunctionConfiguration",
@@ -124,8 +120,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "lambda:TagResource",
       "lambda:UntagResource",
       "lambda:PutFunctionConcurrency",
-      "lambda:DeleteFunctionConcurrency",
-      "lambda:GetPolicy"
+      "lambda:DeleteFunctionConcurrency"
     ]
 
     resources = [
