@@ -71,6 +71,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "s3:ListBucket",
       "s3:GetBucketLocation",
       "s3:GetBucketPolicy",
+      "s3:GetBucketAcl",
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject"
@@ -195,7 +196,8 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "ssm:GetParameters",
       "ssm:PutParameter",
       "ssm:DeleteParameter",
-      "ssm:AddTagsToResource"
+      "ssm:AddTagsToResource",
+      "ssm:ListTagsForResource"
     ]
 
     resources = var.ssm_parameter_arns
@@ -209,6 +211,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
       "sns:CreateTopic",
       "sns:DeleteTopic",
       "sns:GetTopicAttributes",
+      "sns:GetSubscriptionAttributes",
       "sns:Subscribe",
       "sns:SetTopicAttributes",
       "sns:ListSubscriptionsByTopic",
@@ -218,7 +221,8 @@ data "aws_iam_policy_document" "github_actions_deploy" {
     ]
 
     resources = [
-      "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project}-${var.environment}-alerts"
+      "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project}-${var.environment}-alerts",
+      "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.project}-${var.environment}-alerts:*"
     ]
   }
 
@@ -228,6 +232,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
 
     actions = [
       "cloudwatch:DescribeAlarms",
+      "cloudwatch:ListTagsForResource",
       "cloudwatch:PutMetricAlarm",
       "cloudwatch:DeleteAlarms",
       "cloudwatch:EnableAlarmActions",
