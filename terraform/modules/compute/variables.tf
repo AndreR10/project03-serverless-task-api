@@ -1,3 +1,4 @@
+// Inputs used to build and configure the Lambda function.
 variable "project" {
   description = "Project name"
   type        = string

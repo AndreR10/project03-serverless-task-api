@@ -1,3 +1,4 @@
+// Keep runtime settings in Parameter Store so they can be changed without rebuilding Lambda.
 resource "aws_ssm_parameter" "log_level" {
 
   name  = "/${var.project}/${var.environment}/log-level"

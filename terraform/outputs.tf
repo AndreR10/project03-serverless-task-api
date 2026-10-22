@@ -1,3 +1,4 @@
+// Deployment results, such as the API URL and role ARN, can be read with terraform output.
 output "dynamodb_table_name" {
   value = module.dynamodb.table_name
 }

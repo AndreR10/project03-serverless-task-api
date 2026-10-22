@@ -1,3 +1,4 @@
+// GitHub repository identity and AWS resource names used by the trust and permission policies.
 variable "project" {
   description = "Project name used for resource naming."
   type        = string

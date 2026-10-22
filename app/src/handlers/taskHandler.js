@@ -1,3 +1,4 @@
+// Lambda entry point: translate API Gateway events into task-service calls and HTTP responses.
 import { response, logger } from "../utils/index.js";
 
 import { createTask } from "../services/taskService.js";
@@ -7,6 +8,7 @@ import { updateTask } from "../services/taskService.js";
 import { deleteTask } from "../services/taskService.js";
 
 export const handler = async (event, context) => {
+  // Keep a start time so request logs can report how long each operation took.
   const startTime = Date.now();
   const method = event.httpMethod;
   const path = event.resource;
@@ -20,12 +22,14 @@ export const handler = async (event, context) => {
   });
 
   try {
+    // API Gateway provides the HTTP method, route template, and path parameters in the event.
     const method = event.httpMethod;
 
     const path = event.resource;
 
     const id = event.pathParameters?.id;
 
+    // Collection routes create or list tasks; item routes use the ID from the URL.
     if (method === "POST" && path === "/v1/tasks") {
       const body = JSON.parse(event.body);
 
@@ -103,6 +107,7 @@ export const handler = async (event, context) => {
       message: "Route not found",
     });
   } catch (error) {
+    // Return a JSON error to the caller and keep details in CloudWatch for debugging.
     logger.error("Unhandled exception", {
       requestId: context.awsRequestId,
       durationMs: Date.now() - startTime,

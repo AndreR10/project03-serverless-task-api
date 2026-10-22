@@ -1,3 +1,4 @@
+// The root module exposes these values for GitHub setup and troubleshooting.
 output "role_arn" {
   description = "ARN of the IAM role assumed by GitHub Actions."
   value       = aws_iam_role.github_actions.arn

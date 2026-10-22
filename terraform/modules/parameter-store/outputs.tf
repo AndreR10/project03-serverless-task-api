@@ -1,3 +1,4 @@
+// Names and ARNs are passed to Lambda and its execution policy.
 output "parameter_store_log_level_name" {
   description = "Name of the Lambda function"
   value       = aws_ssm_parameter.log_level.name

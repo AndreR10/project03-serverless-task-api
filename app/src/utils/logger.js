@@ -1,8 +1,10 @@
+// Write one JSON log record per message so CloudWatch can search fields consistently.
 const SERVICE = "task-api";
 
 const ENVIRONMENT = process.env.ENVIRONMENT || process.env.NODE_ENV || "dev";
 
 function write(level, message, metadata = {}) {
+  // Include shared context on every log line, then add details from the caller.
   console.log(
     JSON.stringify({
       timestamp: new Date().toISOString(),

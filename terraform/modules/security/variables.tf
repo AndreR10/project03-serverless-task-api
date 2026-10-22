@@ -1,3 +1,4 @@
+// Resource ARNs limit what the Lambda execution role can access.
 variable "project" {
   description = "Project name"
   type        = string

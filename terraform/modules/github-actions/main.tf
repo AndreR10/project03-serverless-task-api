@@ -1,6 +1,8 @@
+// This module creates the GitHub OIDC provider, trust policy, and deployment role.
 data "aws_caller_identity" "current" {}
 
 data "aws_iam_policy_document" "github_actions_assume_role" {
+  // Trust policy: decides which GitHub token is allowed to assume this AWS role.
   statement {
     sid    = "GitHubActionsOIDC"
     effect = "Allow"
@@ -34,6 +36,7 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
 }
 
 data "aws_iam_policy_document" "github_actions_deploy" {
+  // Permission policy: allows Terraform to manage this project's resources.
   # Each service wildcard is limited to the named project resource below.
   # The state bucket remains more restricted because it stores Terraform state.
   statement {
@@ -273,6 +276,7 @@ data "aws_iam_policy_document" "github_actions_deploy" {
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
+  // Register GitHub as an identity provider so AWS can verify GitHub-issued tokens.
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["06d927fecd0a84aeba28aad1d808139470fe95c3"]
@@ -287,6 +291,7 @@ resource "aws_iam_policy" "github_actions_deploy" {
 }
 
 resource "aws_iam_role" "github_actions" {
+  // GitHub Actions assumes this role after the trust policy validates its token.
   name = var.role_name
 
   assume_role_policy = data.aws_iam_policy_document.github_actions_assume_role.json

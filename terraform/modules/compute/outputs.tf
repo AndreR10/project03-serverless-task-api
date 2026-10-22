@@ -1,3 +1,4 @@
+// Values other modules need to connect API Gateway to this Lambda function.
 output "function_name" {
   description = "Name of the Lambda function"
   value       = aws_lambda_function.task_api.function_name

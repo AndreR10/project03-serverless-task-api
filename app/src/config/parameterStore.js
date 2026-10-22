@@ -1,3 +1,4 @@
+// Read application settings from AWS Systems Manager Parameter Store.
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import { logger } from "../utils/index.js";
 
@@ -8,6 +9,7 @@ export const getParameter = async (name) => {
     const response = await client.send(
       new GetParameterCommand({
         Name: name,
+        // Parameter Store decrypts the value if the parameter is stored as SecureString.
         WithDecryption: true,
       }),
     );

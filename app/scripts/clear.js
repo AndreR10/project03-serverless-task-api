@@ -1,3 +1,4 @@
+// Delete every item from the configured table; use carefully because this cannot be undone.
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
@@ -14,6 +15,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = process.env.TABLE_NAME || "task-api-dev-table";
 
 async function clear() {
+  // Scan first because the script needs each item's id to delete it individually.
   const result = await docClient.send(
     new ScanCommand({
       TableName: TABLE_NAME,

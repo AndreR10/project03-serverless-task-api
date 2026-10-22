@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Format Terraform files, then check that the configuration is valid.
 set -e
 
 echo "Formatting Terraform..."

@@ -1,3 +1,4 @@
+// Example task records used by the seed script; IDs and timestamps are generated separately.
 export const tasks = [
   {
     title: "Learn AWS Lambda",

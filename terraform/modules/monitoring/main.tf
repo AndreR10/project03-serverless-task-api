@@ -1,15 +1,18 @@
+// Send alarm notifications to an email subscription on this SNS topic.
 resource "aws_sns_topic" "alerts" {
   name = "${var.project}-${var.environment}-alerts"
   tags = var.tags
 }
 
 resource "aws_sns_topic_subscription" "email" {
+  // AWS sends a confirmation email; the recipient must confirm before receiving alerts.
   topic_arn = aws_sns_topic.alerts.arn
   protocol  = "email"
   endpoint  = var.alert_email
 }
 
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
+  // Alarm thresholds use CloudWatch's five-minute metric periods.
   alarm_name          = "${var.project}-${var.environment}-lambda-errors"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
@@ -86,6 +89,7 @@ resource "aws_cloudwatch_metric_alarm" "dynamodb_throttles" {
 }
 
 resource "aws_cloudwatch_dashboard" "task_api" {
+  // jsonencode converts the Terraform widget objects into the JSON AWS expects.
   dashboard_name = "${var.project}-${var.environment}"
   dashboard_body = jsonencode({
     widgets = concat(

@@ -1,3 +1,4 @@
+// Business rules live here so the HTTP handler does not need to know how tasks are stored.
 import { v4 as uuid } from "uuid";
 import { validateTask } from "../validators/taskValidator.js";
 import { getConfig } from "../config/config.js";
@@ -13,6 +14,7 @@ import {
 export const createTask = async (body) => {
   validateTask(body);
 
+  // The initial status comes from Parameter Store, so it can be changed without editing code.
   const config = await getConfig();
 
   const task = {
@@ -39,6 +41,7 @@ export const updateTask = async (id, body) => {
   validateTask(body);
   await updateTaskById(id, body);
 
+  // Read the record back so the caller receives the updated version.
   return await findTaskById(id);
 };
 

@@ -1,3 +1,4 @@
+// Inputs used to name and initialize the application's runtime parameters.
 variable "project" {
   description = "Project name"
   type        = string

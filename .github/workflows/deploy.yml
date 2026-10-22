@@ -1,5 +1,6 @@
 name: Deploy
 
+# Deploy only after the CI workflow succeeds for a commit on the main branch.
 on:
   workflow_run:
     workflows:
@@ -16,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      # GitHub needs this permission to request an OIDC token from AWS.
       id-token: write
       contents: read
 
@@ -38,7 +40,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build Lambda package
+        # The script prepares source and production dependencies before Terraform packages them.
+        run: bash ../scripts/build.sh
+
       - name: Configure AWS credentials
+        # Exchange the GitHub OIDC token for short-lived credentials, not static AWS keys.
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}

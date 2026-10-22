@@ -1,5 +1,7 @@
+// Store versioned Lambda deployment packages in a private, encrypted bucket.
 resource "aws_s3_bucket" "lambda_artifacts" {
-  bucket        = "${var.project}-${var.environment}-lambda-artifacts"
+  bucket = "${var.project}-${var.environment}-lambda-artifacts"
+  // Terraform can delete a non-empty artifact bucket during destroy; keep this in mind before cleanup.
   force_destroy = true
   tags          = var.tags
 }
@@ -21,6 +23,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "lambda_artifacts"
 }
 
 resource "aws_s3_bucket_public_access_block" "lambda_artifacts" {
+  // Block both public ACLs and public bucket policies.
   bucket                  = aws_s3_bucket.lambda_artifacts.id
   block_public_acls       = true
   ignore_public_acls      = true

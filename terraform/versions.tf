@@ -1,3 +1,4 @@
+// Pin compatible Terraform and provider versions so local and CI runs behave consistently.
 terraform {
   required_version = ">= 1.6"
 

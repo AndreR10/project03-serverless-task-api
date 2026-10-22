@@ -1,3 +1,4 @@
+// This layer translates task operations into DynamoDB commands.
 import {
   DeleteCommand,
   GetCommand,
@@ -12,6 +13,7 @@ import { logger } from "../utils/index.js";
 
 const TABLE_NAME = process.env.TABLE_NAME;
 
+// PutCommand stores the whole task as one DynamoDB item, using its id as the key.
 export const saveTask = async (task) => {
   logger.info("Writing task to DynamoDB", {
     awsOperation: "PutItem",
@@ -43,6 +45,7 @@ export const saveTask = async (task) => {
 };
 
 export const findAllTasks = async () => {
+  // Scan reads every item; this is simple for a small demo table but may be costly at scale.
   logger.info("Scanning DynamoDB table", {
     awsOperation: "Scan",
     tableName: TABLE_NAME,

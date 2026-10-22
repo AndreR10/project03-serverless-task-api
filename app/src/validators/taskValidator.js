@@ -1,3 +1,4 @@
+// Reject invalid task input before the service sends a write to DynamoDB.
 export const validateTask = (body) => {
   // Make sure a request body was provided.
   if (!body || typeof body !== "object" || Array.isArray(body)) {

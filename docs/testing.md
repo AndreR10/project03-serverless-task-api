@@ -24,6 +24,26 @@ npm test
 
 These checks help confirm that the Node.js code is valid and that the app logic behaves as expected.
 
+## Build the Lambda package
+
+Before deploying, the workflow prepares a folder that Lambda can run. From the repository root, run:
+
+```bash
+bash scripts/build.sh
+```
+
+This script copies `app/src` and `app/package.json` into `build/`, then installs production dependencies there. Check that the handler and dependencies were created:
+
+```bash
+test -f build/src/handlers/taskHandler.js
+test -f build/package.json
+test -d build/node_modules
+```
+
+Terraform packages this `build/` folder into a ZIP. Its layout must match the Lambda handler setting, `src/handlers/taskHandler.handler`. The workflow runs this build automatically before Terraform plans and deploys.
+
+If an API request returns `502`, check the Lambda's CloudWatch logs. An error such as `Cannot find module` usually means the handler path in Terraform does not match the files in the ZIP, or the ZIP is missing required files or dependencies.
+
 ---
 
 ## Terraform validation

@@ -1,3 +1,4 @@
+// Create the Lambda function and optionally manage its CloudWatch log group.
 resource "aws_cloudwatch_log_group" "lambda" {
   count             = var.manage_log_group ? 1 : 0
   name              = "/aws/lambda/${var.project}-${var.environment}-handler"
@@ -6,11 +7,13 @@ resource "aws_cloudwatch_log_group" "lambda" {
 }
 
 resource "aws_lambda_function" "task_api" {
-  function_name    = "${var.project}-${var.environment}-handler"
-  role             = var.iam_role_arn
-  runtime          = var.lambda_runtime
-  handler          = var.lambda_handler
-  filename         = var.lambda_artifact_path
+  function_name = "${var.project}-${var.environment}-handler"
+  role          = var.iam_role_arn
+  runtime       = var.lambda_runtime
+  // This path is relative to the root of the ZIP created by archive.tf.
+  handler  = var.lambda_handler
+  filename = var.lambda_artifact_path
+  // Terraform redeploys the function when the packaged source changes.
   source_code_hash = var.lambda_artifact_hash
   memory_size      = var.lambda_memory_size
   timeout          = var.lambda_timeout

@@ -1,3 +1,4 @@
+// Bootstrap inputs for choosing the state bucket's name prefix and AWS region.
 variable "region" {
   description = "AWS Region"
   type        = string

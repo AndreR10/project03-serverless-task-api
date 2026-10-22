@@ -1,3 +1,4 @@
+// Locals give repeated names and tags one shared definition inside this configuration.
 locals {
   project     = var.project_name
   environment = var.environment

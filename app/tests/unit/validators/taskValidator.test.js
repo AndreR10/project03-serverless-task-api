@@ -1,3 +1,4 @@
+// Unit tests for the task input rules; these tests do not call AWS services.
 import { describe, it, expect } from "@jest/globals";
 import { validateTask } from "../../../src/validators/taskValidator.js";
 

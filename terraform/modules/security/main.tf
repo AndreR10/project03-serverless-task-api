@@ -1,3 +1,4 @@
+// The Lambda execution role is assumed by Lambda, not by GitHub Actions.
 resource "aws_iam_role" "lambda_role" {
   name = "${var.project}-${var.environment}-lambda-role"
   assume_role_policy = jsonencode({
@@ -16,6 +17,7 @@ resource "aws_iam_role" "lambda_role" {
 }
 
 resource "aws_iam_policy" "lambda_policy" {
+  // Allow the application to access only its task table and configuration parameters.
   name = "${var.project}-${var.environment}-lambda-policy"
   policy = jsonencode({
     Version = "2012-10-17"
@@ -49,6 +51,7 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attach" {
 }
 
 resource "aws_iam_role_policy_attachment" "cloudwatch_attach" {
+  // AWS's managed basic execution policy lets Lambda write its logs to CloudWatch.
   role       = aws_iam_role.lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }

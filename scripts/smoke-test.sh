@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Make one GET request to confirm that the deployed tasks API is reachable.
 set -euo pipefail
 
 usage() {
@@ -13,6 +14,7 @@ error() {
 API_URL="${1:-${API_URL:-}}"
 
 if [[ -z "${API_URL}" ]]; then
+  # Reuse Terraform's output when available; otherwise ask for the deployed API URL.
   if command -v terraform >/dev/null 2>&1; then
     if terraform -chdir=../terraform output -raw api_base_url >/tmp/task-api-url.txt 2>/dev/null; then
       API_URL="$(tr -d '\r' </tmp/task-api-url.txt)"

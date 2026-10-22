@@ -1,3 +1,4 @@
+// Insert the sample tasks into the configured DynamoDB table for local/AWS testing.
 import { randomUUID } from "crypto";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";

@@ -1,3 +1,4 @@
+// Inputs supplied by the root module to configure API routes and Lambda integration.
 variable "project" {
   description = "Project name"
   type        = string

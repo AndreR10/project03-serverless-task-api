@@ -1,8 +1,10 @@
+// Create this remote state bucket before initializing the main Terraform configuration.
 provider "aws" {
   region = var.region
 }
 
 resource "aws_s3_bucket" "terraform_state" {
+  // S3 bucket names are global; change the project prefix if this name is already taken.
   bucket = "${var.project}-terraform-state-bucket"
 
   tags = {
@@ -13,6 +15,7 @@ resource "aws_s3_bucket" "terraform_state" {
 }
 
 resource "aws_s3_bucket_versioning" "terraform_state" {
+  // Versioning makes earlier state-file versions recoverable after accidental changes.
   bucket = aws_s3_bucket.terraform_state.id
 
   versioning_configuration {
@@ -21,6 +24,7 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" {
+  // Encrypt the Terraform state file while it is stored in S3.
   bucket = aws_s3_bucket.terraform_state.id
 
   rule {

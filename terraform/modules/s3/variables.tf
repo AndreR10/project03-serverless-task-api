@@ -1,3 +1,4 @@
+// Inputs used to create and tag the artifact bucket.
 variable "project" {
   description = "Project name"
   type        = string

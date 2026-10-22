@@ -1,4 +1,5 @@
 
+// Root-module settings can also be supplied through TF_VAR_* environment variables.
 variable "region" {
   description = "AWS Region"
   type        = string

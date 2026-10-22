@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Run the app's sample-data script against the AWS account selected in your CLI profile.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

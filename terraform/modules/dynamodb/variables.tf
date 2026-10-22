@@ -1,3 +1,4 @@
+// Inputs that control the table name, billing mode, and resource tags.
 variable "project" {
   description = "Project name"
   type        = string

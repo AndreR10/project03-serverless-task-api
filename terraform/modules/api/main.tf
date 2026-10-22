@@ -1,3 +1,4 @@
+// API Gateway exposes the collection route and one route for a task ID.
 resource "aws_api_gateway_rest_api" "task_api" {
   name        = "${var.project}-${var.environment}-api"
   description = "Serverless Task Management API"
@@ -22,6 +23,7 @@ resource "aws_api_gateway_resource" "task_id" {
   path_part   = "{id}"
 }
 
+// for_each creates one API method for every HTTP verb selected in the root module.
 resource "aws_api_gateway_method" "collection" {
   for_each      = var.collection_methods
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
@@ -44,8 +46,9 @@ resource "aws_api_gateway_integration" "collection" {
   resource_id             = aws_api_gateway_resource.tasks.id
   http_method             = each.value.http_method
   integration_http_method = var.api_integration_http_method
-  type                    = "AWS_PROXY"
-  uri                     = var.lambda_invoke_arn
+  // Proxy integration forwards the request and response through the Lambda handler.
+  type = "AWS_PROXY"
+  uri  = var.lambda_invoke_arn
 }
 
 resource "aws_api_gateway_integration" "item" {
@@ -69,6 +72,7 @@ resource "aws_lambda_permission" "api_gateway" {
 resource "aws_api_gateway_deployment" "task_api" {
   rest_api_id = aws_api_gateway_rest_api.task_api.id
 
+  // Change the deployment when a route or integration changes, so API Gateway publishes it.
   triggers = {
     redeployment = sha1(jsonencode([
       aws_api_gateway_method.collection,

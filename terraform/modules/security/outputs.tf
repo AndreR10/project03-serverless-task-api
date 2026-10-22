@@ -1,3 +1,4 @@
+// The compute module attaches this role to the Lambda function.
 output "iam_role_arn" {
   description = "ARN of the Lambda execution role"
   value       = aws_iam_role.lambda_role.arn

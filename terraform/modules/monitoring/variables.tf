@@ -1,3 +1,4 @@
+// Resource names and dimensions used by alarms and dashboard widgets.
 variable "project" {
   description = "Project name"
   type        = string

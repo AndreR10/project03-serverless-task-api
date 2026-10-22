@@ -6,6 +6,7 @@
 #
 ##############################################
 
+// The root module passes values and outputs between the smaller service modules.
 module "api" {
   source = "./modules/api"
 
@@ -23,6 +24,7 @@ module "api" {
 module "compute" {
   source = "./modules/compute"
 
+  // These values connect Lambda to the table, settings, role, and built ZIP.
   project                    = var.project_name
   environment                = var.environment
   lambda_runtime             = var.lambda_runtime
@@ -92,6 +94,7 @@ module "parameter_store" {
 module "github_actions" {
   source = "./modules/github-actions"
 
+  // GitHub uses this deployment role; Lambda uses the separate security role.
   project                      = var.project_name
   environment                  = var.environment
   aws_region                   = var.region
