@@ -20,4 +20,10 @@ export const validateTask = (body) => {
   if (!body.title.trim()) {
     throw new Error("Title is required");
   }
+
+  // Reject unknown statuses when a caller supplies one during an update.
+  const allowedStatuses = ["PENDING", "IN_PROGRESS", "COMPLETED"];
+  if (body.status !== undefined && !allowedStatuses.includes(body.status)) {
+    throw new Error("Status must be PENDING, IN_PROGRESS, or COMPLETED");
+  }
 };

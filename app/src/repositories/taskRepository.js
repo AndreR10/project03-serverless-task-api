@@ -129,6 +129,18 @@ export const updateTaskById = async (id, body) => {
   });
 
   try {
+    // Preserve the existing status for older clients that only send title and description.
+    const expressionAttributeValues = {
+      ":title": body.title,
+      ":description": body.description,
+    };
+    let updateExpression = "set title=:title, description=:description";
+
+    if (body.status !== undefined) {
+      updateExpression += ", #status=:status";
+      expressionAttributeValues[":status"] = body.status;
+    }
+
     await dynamo.send(
       new UpdateCommand({
         TableName: TABLE_NAME,
@@ -136,13 +148,9 @@ export const updateTaskById = async (id, body) => {
           id,
         },
 
-        UpdateExpression: "set title=:title, description=:description",
-
-        ExpressionAttributeValues: {
-          ":title": body.title,
-
-          ":description": body.description,
-        },
+        UpdateExpression: updateExpression,
+        ExpressionAttributeNames: body.status !== undefined ? { "#status": "status" } : undefined,
+        ExpressionAttributeValues: expressionAttributeValues,
 
         ReturnValues: "ALL_NEW",
       }),

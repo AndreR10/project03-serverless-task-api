@@ -210,48 +210,40 @@ This is more secure than allowing all repositories or all branches.
 
 ## 7) Deploy through GitHub Actions
 
-The deploy workflow starts after the `CI` workflow finishes successfully for a commit on `main`. You do not need to run the deploy workflow directly.
+The deploy workflow starts after the `CI` workflow succeeds for a commit on `main`. It checks out the project, sets up Node.js 24, builds the Lambda package, assumes the AWS deployment role through OIDC, then runs Terraform plan and apply.
 
-The deployment job has these steps:
-
-1. **Checkout repository:** GitHub downloads the project files.
-2. **Setup Node.js 24:** this provides Node.js and npm, matching the Lambda runtime.
-3. **Build Lambda package:** from the `terraform` folder, the workflow runs `bash ../scripts/build.sh`. The script clears the old `build` folder, copies the application source and `package.json` into it, then installs production dependencies with `npm install --omit=dev`.
-4. **Get AWS credentials with OIDC:** GitHub assumes the deployment role using a short-lived token. No AWS access keys are stored in GitHub.
-5. **Run Terraform:** Terraform plans the changes and applies the saved plan.
-
-The build step is important because Lambda needs both your JavaScript files and the packages they import. The resulting folder looks like this:
+The build copies both the API source and `web/` dashboard into the Lambda package. The resulting ZIP contains:
 
 ```text
-build/
-  package.json
-  node_modules/
-  src/
-    handlers/
-      taskHandler.js
+src/
+  handlers/taskHandler.js
+  web/
+    index.html
+    app.js
+    config.js
 ```
 
-Terraform's `archive_file` data source zips the contents of `build/` into `terraform/build/task-api.zip`. The Lambda handler setting is `src/handlers/taskHandler.handler`: `src/handlers/taskHandler` points to the file in the ZIP, and `.handler` names the exported function. If the handler path and ZIP layout do not match, Lambda can return `502` and log a module import error.
+API Gateway exposes the dashboard at `/ui/index.html`; the handler serves only the known files `/ui/index.html`, `/ui/app.js`, and `/ui/config.js`. Because the dashboard and task API share the API Gateway HTTPS origin, browser requests do not need a public S3 bucket or a separate CORS origin.
 
-The workflow configuration includes:
+The build runs before Terraform and does not need AWS credentials. Terraform archives `build/` into `terraform/build/task-api.zip`; the configured Lambda handler is `src/handlers/taskHandler.handler`.
 
-```yaml
-permissions:
-  id-token: write
-  contents: read
+### Remove the previous frontend hosting resources
+
+If an earlier apply created the frontend S3 bucket, its current `force_destroy` setting means Terraform can remove that bucket and its files when the frontend module is removed. Use an AWS profile authorized to manage the infrastructure and inspect the plan:
+
+```bash
+cd terraform
+terraform init
+terraform plan
 ```
 
-and values like:
+Do not apply if the plan would delete anything you need to keep. If the plan only removes the old frontend bucket and updates the Lambda/API deployment, apply it:
 
-```yaml
-env:
-  TF_VAR_github_owner_id: ${{ vars.OWNER_ID }}
-  TF_VAR_github_repository_id: ${{ vars.REPOSITORY_ID }}
+```bash
+terraform apply
 ```
 
-Then GitHub requests a short-lived token from AWS and assumes the deployment role.
-
-The build does not need AWS credentials; it only packages the Node.js application. Terraform needs the AWS role to create or update AWS resources.
+After that change is applied, later successful CI runs deploy the dashboard through the usual GitHub Actions workflow.
 
 ---
 
@@ -263,13 +255,19 @@ After the workflow finishes, check:
 - the role was assumed without AWS keys
 - the Lambda function exists
 - the API Gateway endpoint is deployed
+- the dashboard URL `/ui/index.html` is reachable
 - the application responds to API calls
 
-You can also verify the application with curl:
+Get the dashboard URL with:
 
 ```bash
-curl https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks
+cd terraform
+terraform output -raw frontend_url
 ```
+
+The `frontend_url` Terraform output is the HTTPS API Gateway stage URL followed by `/ui/index.html`. Open it in a browser; the page and API use the same origin.
+
+The API also allows browser requests from the dashboard. Its Lambda responses include CORS headers, and API Gateway sends browser `OPTIONS` preflight requests to the handler.
 
 ---
 

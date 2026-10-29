@@ -24,13 +24,13 @@ variable "api_integration_http_method" {
 variable "collection_methods" {
   description = "HTTP methods for the collection resource"
   type        = set(string)
-  default     = ["GET", "POST"]
+  default     = ["GET", "POST", "OPTIONS"]
 }
 
 variable "item_methods" {
   description = "HTTP methods for the item resource"
   type        = set(string)
-  default     = ["GET", "PUT", "DELETE"]
+  default     = ["GET", "PUT", "DELETE", "OPTIONS"]
 }
 
 variable "lambda_invoke_arn" {

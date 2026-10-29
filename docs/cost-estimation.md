@@ -47,6 +47,14 @@ Lambda charges are based on:
 
 This project keeps memory low and function execution simple, which helps keep costs down.
 
+## Frontend hosting cost
+
+The dashboard files are included in the Lambda deployment package and served by the existing
+API Gateway and Lambda function. This avoids adding a public S3 website bucket or CloudFront
+distribution. Requests for the UI still use API Gateway and Lambda, so they count toward the
+same service usage as API requests and may be billable outside your account's Free Tier credits
+or allowances.
+
 ---
 
 ## API Gateway cost

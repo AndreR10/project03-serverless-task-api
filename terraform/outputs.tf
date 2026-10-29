@@ -15,6 +15,11 @@ output "api_base_url" {
   value = module.api.stage_url
 }
 
+output "frontend_url" {
+  description = "URL of the task dashboard served by API Gateway and Lambda."
+  value       = "${module.api.stage_url}/ui/index.html"
+}
+
 output "lambda_name" {
   value = module.compute.function_name
 }

@@ -309,6 +309,7 @@ describe("taskRepository", () => {
       const body = {
         title: "Updated task",
         description: "Updated description",
+        status: "IN_PROGRESS",
       };
 
       /*
@@ -352,7 +353,9 @@ describe("taskRepository", () => {
       expect(command.input.ExpressionAttributeValues).toEqual({
         ":title": "Updated task",
         ":description": "Updated description",
+        ":status": "IN_PROGRESS",
       });
+      expect(command.input.ExpressionAttributeNames).toEqual({ "#status": "status" });
     });
 
     it("should throw an error when the update fails", async () => {

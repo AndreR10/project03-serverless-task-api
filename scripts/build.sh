@@ -3,6 +3,7 @@
 # Prepare the files and production packages that Terraform will zip for Lambda.
 set -e
 
+# Set PROJECT_ROOT to the parent directory of this script's location, ensuring paths are resolved correctly regardless of where the script is run from.
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "Cleaning build folder..."
@@ -15,6 +16,9 @@ mkdir -p "$PROJECT_ROOT/build"
 echo "Copying source files..."
 
 cp -r "$PROJECT_ROOT/app/src" "$PROJECT_ROOT/build"
+
+# Include the static dashboard so the Lambda can serve it from API Gateway.
+cp -r "$PROJECT_ROOT/web" "$PROJECT_ROOT/build/src/web"
 
 cp "$PROJECT_ROOT/app/package.json" "$PROJECT_ROOT/build"
 

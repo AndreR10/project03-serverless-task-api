@@ -5,6 +5,7 @@ This project is a beginner-friendly AWS serverless API that shows how to build, 
 - Node.js
 - AWS Lambda
 - API Gateway
+- Task dashboard served by the Lambda API
 - DynamoDB
 - SSM Parameter Store
 - CloudWatch
@@ -61,6 +62,7 @@ AWS IAM Role
 Terraform
    |
    +--> API Gateway
+   +--> Dashboard UI served by API Gateway + Lambda
    +--> Lambda
    +--> DynamoDB
    +--> S3
@@ -110,6 +112,15 @@ Client -> API Gateway -> Lambda -> DynamoDB
 - GitHub Actions
 - OIDC authentication with AWS
 
+After deployment, open the dashboard URL with:
+
+```bash
+cd terraform
+terraform output -raw frontend_url
+```
+
+The dashboard is served by the existing API Gateway and Lambda at `/ui/index.html`; it does not create a public S3 website bucket or CloudFront distribution. UI visits still count as API Gateway and Lambda usage. The API has no authentication, so anyone with its URL can read or modify demo tasks.
+
 ---
 
 ## Repository structure
@@ -128,6 +139,10 @@ project03-serverless-task-api/
 │   ├── package.json
 │   └── package-lock.json
 ├── docs/
+├── web/
+│   ├── app.js
+│   ├── config.js
+│   └── index.html
 ├── scripts/
 ├── terraform/
 │   ├── archive.tf

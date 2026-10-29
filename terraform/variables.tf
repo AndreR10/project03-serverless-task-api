@@ -25,13 +25,13 @@ variable "environment" {
 variable "tasks_methods" {
   description = "HTTP methods allowed for the tasks resource"
   type        = list(string)
-  default     = ["GET", "POST"]
+  default     = ["GET", "POST", "OPTIONS"]
 }
 
 variable "task_id_methods" {
   description = "HTTP methods allowed for the task-id resource"
   type        = list(string)
-  default     = ["GET", "PUT", "DELETE"]
+  default     = ["GET", "PUT", "DELETE", "OPTIONS"]
 }
 
 variable "api_authorization" {

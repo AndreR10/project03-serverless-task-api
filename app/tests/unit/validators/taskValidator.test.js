@@ -32,4 +32,9 @@ describe("validateTask", () => {
   it("should accept a valid title", () => {
     expect(() => validateTask({ title: "Complete AWS project" })).not.toThrow();
   });
+  it("should reject an unknown status", () => {
+    expect(() => validateTask({ title: "Task", status: "BLOCKED" })).toThrow(
+      "Status must be PENDING, IN_PROGRESS, or COMPLETED",
+    );
+  });
 });

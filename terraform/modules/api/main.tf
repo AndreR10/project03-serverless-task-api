@@ -23,6 +23,19 @@ resource "aws_api_gateway_resource" "task_id" {
   path_part   = "{id}"
 }
 
+// Serve the static dashboard from the existing Lambda/API Gateway endpoint.
+resource "aws_api_gateway_resource" "ui" {
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  parent_id   = aws_api_gateway_rest_api.task_api.root_resource_id
+  path_part   = "ui"
+}
+
+resource "aws_api_gateway_resource" "ui_asset" {
+  rest_api_id = aws_api_gateway_rest_api.task_api.id
+  parent_id   = aws_api_gateway_resource.ui.id
+  path_part   = "{asset}"
+}
+
 // for_each creates one API method for every HTTP verb selected in the root module.
 resource "aws_api_gateway_method" "collection" {
   for_each      = var.collection_methods
@@ -37,6 +50,13 @@ resource "aws_api_gateway_method" "item" {
   rest_api_id   = aws_api_gateway_rest_api.task_api.id
   resource_id   = aws_api_gateway_resource.task_id.id
   http_method   = each.value
+  authorization = var.api_authorization
+}
+
+resource "aws_api_gateway_method" "ui_asset" {
+  rest_api_id   = aws_api_gateway_rest_api.task_api.id
+  resource_id   = aws_api_gateway_resource.ui_asset.id
+  http_method   = "GET"
   authorization = var.api_authorization
 }
 
@@ -61,6 +81,15 @@ resource "aws_api_gateway_integration" "item" {
   uri                     = var.lambda_invoke_arn
 }
 
+resource "aws_api_gateway_integration" "ui_asset" {
+  rest_api_id             = aws_api_gateway_rest_api.task_api.id
+  resource_id             = aws_api_gateway_resource.ui_asset.id
+  http_method             = aws_api_gateway_method.ui_asset.http_method
+  integration_http_method = var.api_integration_http_method
+  type                    = "AWS_PROXY"
+  uri                     = var.lambda_invoke_arn
+}
+
 resource "aws_lambda_permission" "api_gateway" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
@@ -77,8 +106,10 @@ resource "aws_api_gateway_deployment" "task_api" {
     redeployment = sha1(jsonencode([
       aws_api_gateway_method.collection,
       aws_api_gateway_method.item,
+      aws_api_gateway_method.ui_asset,
       aws_api_gateway_integration.collection,
-      aws_api_gateway_integration.item
+      aws_api_gateway_integration.item,
+      aws_api_gateway_integration.ui_asset
     ]))
   }
 
@@ -88,7 +119,8 @@ resource "aws_api_gateway_deployment" "task_api" {
 
   depends_on = [
     aws_api_gateway_integration.collection,
-    aws_api_gateway_integration.item
+    aws_api_gateway_integration.item,
+    aws_api_gateway_integration.ui_asset
   ]
 }
 

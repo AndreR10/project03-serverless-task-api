@@ -63,13 +63,66 @@ This confirms that your configuration is valid and shows what will change in AWS
 
 ## Smoke tests for the deployed API
 
-Once the API is deployed, test the endpoints with curl.
+Once the API is deployed, retrieve its URL from Terraform's state instead of typing the API ID by hand. From the repository root, run:
+
+```bash
+cd terraform
+terraform init
+
+API_URL="$(terraform output -raw api_url)"
+API_BASE_URL="$(terraform output -raw api_base_url)"
+LAMBDA_NAME="$(terraform output -raw lambda_name)"
+FRONTEND_URL="$(terraform output -raw frontend_url)"
+
+printf 'Tasks endpoint: %s\n' "$API_URL"
+printf 'API base URL: %s\n' "$API_BASE_URL"
+printf 'Lambda function: %s\n' "$LAMBDA_NAME"
+printf 'Frontend URL: %s\n' "$FRONTEND_URL"
+```
+
+`api_url` includes `/v1/tasks`, so use it for task requests. `api_base_url` is the API Gateway stage URL, so use it when testing a different route. These outputs are available after Terraform has successfully deployed the resources and the state backend is accessible.
+
+Keep the same terminal open so the variables remain available, then run the examples below.
+
+### Preview the UI locally
+
+You can preview the static UI before deploying. From the repository root, get the API URL and start a small local web server:
+
+```bash
+API_BASE_URL="$(terraform -chdir=terraform output -raw api_base_url)"
+python3 -m http.server 4173 --directory web
+```
+
+Open this address in a browser, replacing `<URL_ENCODED_API_BASE_URL>` with the encoded value of `API_BASE_URL`:
+
+```text
+http://localhost:4173/?api=<URL_ENCODED_API_BASE_URL>
+```
+
+For example, encode `https://abc123.execute-api.eu-west-1.amazonaws.com/dev` as `https%3A%2F%2Fabc123.execute-api.eu-west-1.amazonaws.com%2Fdev`. The local `web/config.js` reads this query parameter; when deployed under `/dev/ui/`, it derives the API stage URL from the current hostname and path.
+
+### Test the browser dashboard
+
+Open the value printed for `FRONTEND_URL` in a browser. The page should show the tasks from the API. Try creating a task, changing its title or status, searching/filtering the list, and deleting the test task.
+
+If the page loads but shows a connection error, check that the API deployment includes the `/ui/{asset}` route and the Lambda package contains `src/web`.
+
+You can test the API's CORS preflight from the terminal with:
+
+```bash
+curl -i -X OPTIONS "$API_BASE_URL/v1/tasks" \
+  -H "Origin: http://localhost:4173" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: content-type"
+```
+
+The deployed UI is same-origin and does not need CORS. This preflight check is only for a local preview served from `localhost:4173`.
 
 ### 1) Create a task
 
 ```bash
 curl -X POST \
-  https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks \
+  "$API_URL" \
   -H "Content-Type: application/json" \
   -d '{
     "title":"Study AWS",
@@ -87,7 +140,7 @@ Expected result:
 ### 2) List tasks
 
 ```bash
-curl https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks
+curl "$API_URL"
 ```
 
 Expected result:
@@ -100,7 +153,7 @@ Expected result:
 ### 3) Get one task
 
 ```bash
-curl https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/<TASK_ID>
+curl "$API_URL/<TASK_ID>"
 ```
 
 Expected result:
@@ -114,7 +167,7 @@ Expected result:
 
 ```bash
 curl -X PUT \
-  https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/<TASK_ID> \
+  "$API_URL/<TASK_ID>" \
   -H "Content-Type: application/json" \
   -d '{
     "title":"Study Terraform",
@@ -133,7 +186,7 @@ Expected result:
 ### 5) Delete a task
 
 ```bash
-curl -X DELETE https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks/<TASK_ID>
+curl -X DELETE "$API_URL/<TASK_ID>"
 ```
 
 Expected result:
@@ -151,7 +204,7 @@ It is also useful to check failures.
 
 ```bash
 curl -X POST \
-  https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/tasks \
+  "$API_URL" \
   -H "Content-Type: application/json" \
   -d '{}'
 ```
@@ -163,7 +216,7 @@ Expected result:
 ### Invalid route
 
 ```bash
-curl https://YOUR_API_ID.execute-api.eu-west-1.amazonaws.com/dev/v1/does-not-exist
+curl "$API_BASE_URL/v1/does-not-exist"
 ```
 
 Expected result:

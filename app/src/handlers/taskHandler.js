@@ -1,4 +1,5 @@
 // Lambda entry point: translate API Gateway events into task-service calls and HTTP responses.
+import { readFile } from "node:fs/promises";
 import { response, logger } from "../utils/index.js";
 
 import { createTask } from "../services/taskService.js";
@@ -6,6 +7,29 @@ import { getAllTasks } from "../services/taskService.js";
 import { getTaskById } from "../services/taskService.js";
 import { updateTask } from "../services/taskService.js";
 import { deleteTask } from "../services/taskService.js";
+
+const frontendAssets = {
+  "index.html": { contentType: "text/html; charset=utf-8" },
+  "app.js": { contentType: "application/javascript; charset=utf-8" },
+  "config.js": { contentType: "application/javascript; charset=utf-8" },
+};
+
+async function serveFrontendAsset(assetName) {
+  const asset = frontendAssets[assetName];
+  if (!asset) {
+    return response(404, { message: "Frontend file not found" });
+  }
+
+  const body = await readFile(new URL(`../web/${assetName}`, import.meta.url), "utf8");
+  return {
+    statusCode: 200,
+    headers: {
+      "Content-Type": asset.contentType,
+      "Cache-Control": "no-store",
+    },
+    body,
+  };
+}
 
 export const handler = async (event, context) => {
   // Keep a start time so request logs can report how long each operation took.
@@ -28,6 +52,16 @@ export const handler = async (event, context) => {
     const path = event.resource;
 
     const id = event.pathParameters?.id;
+
+    // Browsers send OPTIONS before cross-origin writes to ask which methods are allowed.
+    if (method === "OPTIONS") {
+      return response(200, {});
+    }
+
+    // Serve only the three known frontend files from the packaged Lambda directory.
+    if (method === "GET" && path === "/ui/{asset}") {
+      return await serveFrontendAsset(event.pathParameters?.asset);
+    }
 
     // Collection routes create or list tasks; item routes use the ID from the URL.
     if (method === "POST" && path === "/v1/tasks") {

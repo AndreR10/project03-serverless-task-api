@@ -18,6 +18,8 @@ API version:
 
 All requests and responses are JSON.
 
+The API is public and currently uses no authentication, so anyone who can reach its URL can read or change tasks. CORS allows the browser dashboard to call the API from another domain; CORS is not authentication or access control. Use this setup for a demo, not for sensitive data.
+
 ---
 
 ## Endpoints
