@@ -16,8 +16,8 @@ output "api_base_url" {
 }
 
 output "frontend_url" {
-  description = "URL of the task dashboard served by API Gateway and Lambda."
-  value       = "${module.api.stage_url}/ui/index.html"
+  description = "HTTP URL of the task dashboard hosted as an S3 website."
+  value       = module.frontend.url
 }
 
 output "lambda_name" {

@@ -1,5 +1,7 @@
+// Browser controller for the task dashboard. All persistent task data comes from the API.
 const apiBaseUrl = window.TASK_API_BASE_URL?.replace(/\/$/, "");
 
+// Keep references to page elements so event handlers can update them without searching again.
 const elements = {
   connection: document.querySelector("#connection-label"),
   connectionIndicator: document.querySelector("#connection-indicator"),
@@ -30,6 +32,7 @@ const elements = {
 
 let tasks = [];
 
+// Show progress and API errors in the live status message above the task list.
 function setMessage(message = "", isError = false) {
   elements.message.textContent = message;
   elements.message.classList.toggle("d-none", !message);
@@ -37,6 +40,8 @@ function setMessage(message = "", isError = false) {
   elements.message.classList.toggle("alert-secondary", !isError);
 }
 
+// Send one request to the task collection or to a specific task ID.
+// The API returns JSON; non-2xx responses become readable errors for the UI.
 async function request(path = "", options = {}) {
   if (!apiBaseUrl) {
     throw new Error("The API URL has not been configured for this website.");
@@ -57,6 +62,7 @@ async function request(path = "", options = {}) {
   return responseBody;
 }
 
+// Calculate the four summary numbers from the currently loaded tasks.
 function updateSummary() {
   const counts = tasks.reduce(
     (result, task) => {
@@ -77,6 +83,8 @@ function updateSummary() {
   elements.navCount.textContent = counts.total;
 }
 
+// Build one task row using DOM methods and textContent so task text is displayed as text,
+// rather than interpreted as HTML.
 function makeTaskRow(task, index) {
   const row = document.createElement("article");
   row.className = "row g-0 align-items-center border-bottom px-3 py-3 bg-white";
@@ -134,6 +142,7 @@ function makeTaskRow(task, index) {
   return row;
 }
 
+// Apply the search text and status dropdown locally, then redraw only the visible rows.
 function renderTasks() {
   const query = elements.search.value.trim().toLowerCase();
   const statusFilter = elements.filter.value;
@@ -157,6 +166,7 @@ function renderTasks() {
   document.querySelector("#empty-create-button").hidden = tasks.length > 0;
 }
 
+// Fetch the current task collection and update the connection indicator and page contents.
 async function loadTasks() {
   elements.connection.textContent = "Connecting…";
   elements.connectionIndicator.className = "badge rounded-pill text-bg-warning";
@@ -178,6 +188,7 @@ async function loadTasks() {
   }
 }
 
+// Reuse the same Bootstrap modal for create and edit; an existing task fills in its values.
 function openDialog(task = null) {
   elements.form.reset();
   elements.formError.textContent = "";
@@ -194,10 +205,12 @@ function openDialog(task = null) {
   elements.title.focus();
 }
 
+// Ask Bootstrap to hide the dialog, including its backdrop and focus handling.
 function closeDialog() {
   bootstrap.Modal.getOrCreateInstance(elements.dialog).hide();
 }
 
+// A blank ID means POST a new task; an existing ID means PUT changes to that task.
 async function saveTask(event) {
   event.preventDefault();
   elements.formError.textContent = "";
@@ -225,6 +238,7 @@ async function saveTask(event) {
   }
 }
 
+// Confirm before sending DELETE because the operation cannot be undone from this page.
 async function deleteTask(task) {
   if (!window.confirm(`Delete “${task.title}”? This cannot be undone.`)) return;
 
@@ -237,6 +251,7 @@ async function deleteTask(task) {
   }
 }
 
+// Connect the page controls to their actions after all HTML elements are available.
 document.querySelector("#new-task-button").addEventListener("click", () => openDialog());
 document.querySelector("#empty-create-button").addEventListener("click", () => openDialog());
 document.querySelector("#refresh-button").addEventListener("click", loadTasks);
@@ -247,6 +262,7 @@ elements.search.addEventListener("input", renderTasks);
 elements.filter.addEventListener("change", renderTasks);
 
 document.addEventListener("keydown", (event) => {
+  // Cmd+K on macOS and Ctrl+K elsewhere focus the task search field.
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
     event.preventDefault();
     elements.search.focus();

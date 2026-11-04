@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Prepare the files and production packages that Terraform will zip for Lambda.
-set -e
+set -euo pipefail
 
 # Set PROJECT_ROOT to the parent directory of this script's location, ensuring paths are resolved correctly regardless of where the script is run from.
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -17,16 +17,18 @@ echo "Copying source files..."
 
 cp -r "$PROJECT_ROOT/app/src" "$PROJECT_ROOT/build"
 
-# Include the static dashboard so the Lambda can serve it from API Gateway.
-cp -r "$PROJECT_ROOT/web" "$PROJECT_ROOT/build/src/web"
 
 cp "$PROJECT_ROOT/app/package.json" "$PROJECT_ROOT/build"
+cp "$PROJECT_ROOT/app/package-lock.json" "$PROJECT_ROOT/build"
 
 echo "Installing dependencies..."
 
-# Install only runtime dependencies; test and lint packages are not needed in Lambda.
+# Install exact locked runtime dependencies; test and lint packages are not needed in Lambda.
 cd "$PROJECT_ROOT/build"
 
-npm install --omit=dev
+npm ci --omit=dev
+
+# Fail the build rather than deploy a ZIP that will crash when the handler imports uuid.
+test -f node_modules/uuid/package.json
 
 echo "Build finished successfully."

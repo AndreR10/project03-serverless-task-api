@@ -8,7 +8,7 @@ The system combines:
 - OpenID Connect (OIDC) for AWS login
 - Terraform for infrastructure provisioning
 - API Gateway for the public API
-- Static dashboard files packaged with the Lambda function
+- S3 static website hosting for the browser dashboard
 - Lambda for business logic
 - DynamoDB for data storage
 - CloudWatch for logs and monitoring
@@ -41,7 +41,7 @@ Terraform
    +--> SSM
    +--> CloudWatch
    +--> IAM
-        +--> Dashboard files in Lambda deployment package
+        +--> Public-read S3 website dashboard
    |
    v
 AWS
@@ -72,17 +72,17 @@ DynamoDB
 HTTP response
 ```
 
-The browser dashboard is served by the existing API Gateway and Lambda deployment at
-`/ui/index.html`. Its JavaScript and configuration are returned by the same Lambda at
-`/ui/app.js` and `/ui/config.js`. The dashboard calls `/v1/tasks` on the same origin, so it
-does not need a public S3 bucket, CloudFront distribution, or browser CORS exception.
+The browser dashboard is served from an S3 website endpoint. A bucket policy allows public
+reads of the website files, but does not allow visitors to list the bucket or upload files.
+The page calls the HTTPS API Gateway URL, so browser API requests use the API's CORS headers.
+The S3 website endpoint itself uses HTTP and is intended for this non-sensitive demo.
 
 ```text
 Recruiter's browser
         |
-        +---- HTTPS page and assets ----> API Gateway ----> Lambda
+        +---- HTTP page -----> S3 static website
         |
-        +---- task API calls -----------> API Gateway ----> Lambda ----> DynamoDB / SSM
+        +---- HTTPS API calls -> API Gateway -> Lambda -> DynamoDB / SSM
 ```
 
 Example: create a task
@@ -128,7 +128,7 @@ The Terraform configuration creates:
 - Lambda
 - DynamoDB
 - S3 bucket
-- static dashboard files included in the Lambda package
+- public-read S3 website bucket for the dashboard
 - SSM parameters
 - IAM policies and roles
 - OIDC provider and deployment role

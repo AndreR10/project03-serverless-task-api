@@ -91,6 +91,15 @@ module "parameter_store" {
   tags = local.tags
 }
 
+module "frontend" {
+  source = "./modules/frontend"
+
+  project      = var.project_name
+  environment  = var.environment
+  api_base_url = module.api.stage_url
+  tags         = local.tags
+}
+
 module "github_actions" {
   source = "./modules/github-actions"
 
@@ -106,6 +115,8 @@ module "github_actions" {
   github_branch                = var.github_branch
   terraform_state_bucket       = "task-api-terraform-state-bucket"
   lambda_artifacts_bucket_name = module.s3.bucket_name
+  frontend_bucket_arn          = module.frontend.bucket_arn
+  frontend_objects_arn         = module.frontend.objects_arn
   lambda_function_name         = module.compute.function_name
   lambda_log_group_name        = "/aws/lambda/${var.project_name}-${var.environment}-handler"
   api_gateway_execution_arn    = module.api.execution_arn

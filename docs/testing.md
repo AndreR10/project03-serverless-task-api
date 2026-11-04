@@ -17,7 +17,7 @@ From the app folder:
 
 ```bash
 cd app
-npm install
+npm ci
 npm run lint
 npm test
 ```
@@ -32,17 +32,18 @@ Before deploying, the workflow prepares a folder that Lambda can run. From the r
 bash scripts/build.sh
 ```
 
-This script copies `app/src` and `app/package.json` into `build/`, then installs production dependencies there. Check that the handler and dependencies were created:
+This script copies `app/src`, `app/package.json`, and `app/package-lock.json` into `build/`, then installs the exact production dependencies recorded in the lockfile with `npm ci --omit=dev`. Check that the handler and the dependency reported missing in the Lambda logs are present:
 
 ```bash
 test -f build/src/handlers/taskHandler.js
 test -f build/package.json
+test -f build/node_modules/uuid/package.json
 test -d build/node_modules
 ```
 
-Terraform packages this `build/` folder into a ZIP. Its layout must match the Lambda handler setting, `src/handlers/taskHandler.handler`. The workflow runs this build automatically before Terraform plans and deploys.
+Terraform packages this `build/` folder into `terraform/build/task-api.zip`. The archive must contain `node_modules/uuid/package.json` as well as the handler. GitHub Actions checks for that file in the ZIP after `terraform plan` and stops before `apply` if it is missing. The Lambda handler setting must match the archive path: `src/handlers/taskHandler.handler`.
 
-If an API request returns `502`, check the Lambda's CloudWatch logs. An error such as `Cannot find module` usually means the handler path in Terraform does not match the files in the ZIP, or the ZIP is missing required files or dependencies.
+If an API request returns `502`, check the Lambda's CloudWatch logs. `Cannot find package 'uuid'` means the runtime dependency is missing from the ZIP. `Cannot find module 'taskHandler'` points to a handler path or ZIP layout mismatch.
 
 ---
 
@@ -99,24 +100,24 @@ Open this address in a browser, replacing `<URL_ENCODED_API_BASE_URL>` with the 
 http://localhost:4173/?api=<URL_ENCODED_API_BASE_URL>
 ```
 
-For example, encode `https://abc123.execute-api.eu-west-1.amazonaws.com/dev` as `https%3A%2F%2Fabc123.execute-api.eu-west-1.amazonaws.com%2Fdev`. The local `web/config.js` reads this query parameter; when deployed under `/dev/ui/`, it derives the API stage URL from the current hostname and path.
+For example, encode `https://abc123.execute-api.eu-west-1.amazonaws.com/dev` as `https%3A%2F%2Fabc123.execute-api.eu-west-1.amazonaws.com%2Fdev`. The local `web/config.js` reads this query parameter. During deployment Terraform writes a generated `config.js` with the API URL into the S3 website bucket.
 
 ### Test the browser dashboard
 
-Open the value printed for `FRONTEND_URL` in a browser. The page should show the tasks from the API. Try creating a task, changing its title or status, searching/filtering the list, and deleting the test task.
+Open the value printed for `FRONTEND_URL` in a browser. The S3 website endpoint uses HTTP. The page should show the tasks from the API. Try creating a task, changing its title or status, searching/filtering the list, and deleting the test task.
 
-If the page loads but shows a connection error, check that the API deployment includes the `/ui/{asset}` route and the Lambda package contains `src/web`.
+If the page loads but shows a connection error, check that the generated `config.js` contains the API stage URL and that the Lambda responses include the required CORS headers.
 
 You can test the API's CORS preflight from the terminal with:
 
 ```bash
 curl -i -X OPTIONS "$API_BASE_URL/v1/tasks" \
-  -H "Origin: http://localhost:4173" \
+  -H "Origin: $FRONTEND_URL" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: content-type"
 ```
 
-The deployed UI is same-origin and does not need CORS. This preflight check is only for a local preview served from `localhost:4173`.
+The S3 website and API Gateway have different origins, so the API must allow the website origin through CORS.
 
 ### 1) Create a task
 

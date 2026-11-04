@@ -210,40 +210,40 @@ This is more secure than allowing all repositories or all branches.
 
 ## 7) Deploy through GitHub Actions
 
-The deploy workflow starts after the `CI` workflow succeeds for a commit on `main`. It checks out the project, sets up Node.js 24, builds the Lambda package, assumes the AWS deployment role through OIDC, then runs Terraform plan and apply.
+The deploy workflow starts after the `CI` workflow succeeds for a commit on `main`. It checks out the project, sets up Node.js 24, builds the Lambda package, assumes the AWS deployment role through OIDC, and then runs Terraform plan and apply. The frontend is uploaded by Terraform to an S3 static website bucket; Terraform generates `config.js` with the API Gateway stage URL.
 
-The build copies both the API source and `web/` dashboard into the Lambda package. The resulting ZIP contains:
+### Allow the public website bucket
 
-```text
-src/
-  handlers/taskHandler.js
-  web/
-    index.html
-    app.js
-    config.js
+The previous `PutBucketPolicy` error says account-level or organization-level S3 Block Public Access is preventing public bucket policies. As the account administrator, inspect the account setting:
+
+```bash
+AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+aws s3control get-public-access-block --account-id "$AWS_ACCOUNT_ID" --region eu-west-1
 ```
 
-API Gateway exposes the dashboard at `/ui/index.html`; the handler serves only the known files `/ui/index.html`, `/ui/app.js`, and `/ui/config.js`. Because the dashboard and task API share the API Gateway HTTPS origin, browser requests do not need a public S3 bucket or a separate CORS origin.
+If your organization permits a public-read demo website, keep ACL-based public access blocked and disable the two account-wide settings that prevent bucket policies from granting public reads:
 
-The build runs before Terraform and does not need AWS credentials. Terraform archives `build/` into `terraform/build/task-api.zip`; the configured Lambda handler is `src/handlers/taskHandler.handler`.
+```bash
+aws s3control put-public-access-block \
+  --account-id "$AWS_ACCOUNT_ID" \
+  --region eu-west-1 \
+  --public-access-block-configuration '{"BlockPublicAcls":true,"IgnorePublicAcls":true,"BlockPublicPolicy":false,"RestrictPublicBuckets":false}'
+```
 
-### Remove the previous frontend hosting resources
+**This changes S3 public-access guardrails for the entire account.** It does not make every bucket public, but it allows bucket policies to do so. The frontend bucket policy grants only `s3:GetObject` on this website's files. Do not run this command if an AWS Organizations policy requires public access to remain blocked; that policy must be changed by the organization administrator.
 
-If an earlier apply created the frontend S3 bucket, its current `force_destroy` setting means Terraform can remove that bucket and its files when the frontend module is removed. Use an AWS profile authorized to manage the infrastructure and inspect the plan:
+If `get-public-access-block` reports `NoSuchPublicAccessBlockConfiguration`, no account-level setting is configured. The frontend module sets the bucket-level `BlockPublicPolicy` and `RestrictPublicBuckets` flags to `false` and applies them before its bucket policy. If `PutBucketPolicy` is still denied, check whether AWS Organizations enforces a public-access restriction; do not broaden account settings without confirming the source of the denial.
+
+After the effective account or organization setting permits the bucket policy, use an authorized AWS profile to review and apply the project:
 
 ```bash
 cd terraform
 terraform init
 terraform plan
-```
-
-Do not apply if the plan would delete anything you need to keep. If the plan only removes the old frontend bucket and updates the Lambda/API deployment, apply it:
-
-```bash
 terraform apply
 ```
 
-After that change is applied, later successful CI runs deploy the dashboard through the usual GitHub Actions workflow.
+Review the plan before applying. If a failed earlier apply created the frontend bucket, Terraform should reuse it. Its `force_destroy` setting means a later destroy can remove the bucket and its contents, so keep only generated website files there.
 
 ---
 
@@ -255,7 +255,7 @@ After the workflow finishes, check:
 - the role was assumed without AWS keys
 - the Lambda function exists
 - the API Gateway endpoint is deployed
-- the dashboard URL `/ui/index.html` is reachable
+- the S3 website URL is reachable
 - the application responds to API calls
 
 Get the dashboard URL with:
@@ -265,9 +265,9 @@ cd terraform
 terraform output -raw frontend_url
 ```
 
-The `frontend_url` Terraform output is the HTTPS API Gateway stage URL followed by `/ui/index.html`. Open it in a browser; the page and API use the same origin.
+The `frontend_url` Terraform output is the S3 website endpoint. Open it in a browser. The S3 website endpoint uses HTTP; the task API itself remains HTTPS.
 
-The API also allows browser requests from the dashboard. Its Lambda responses include CORS headers, and API Gateway sends browser `OPTIONS` preflight requests to the handler.
+Because the S3 website and API Gateway have different origins, the API's CORS headers allow the dashboard to call the task routes from a browser.
 
 ---
 

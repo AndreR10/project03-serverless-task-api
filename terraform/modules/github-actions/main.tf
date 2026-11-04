@@ -83,6 +83,20 @@ data "aws_iam_policy_document" "github_actions_deploy" {
   }
 
   statement {
+    sid    = "FrontendWebsiteBucketAccess"
+    effect = "Allow"
+
+    actions = [
+      "s3:*"
+    ]
+
+    resources = [
+      var.frontend_bucket_arn,
+      var.frontend_objects_arn
+    ]
+  }
+
+  statement {
     sid    = "ApiGatewayManagement"
     effect = "Allow"
 

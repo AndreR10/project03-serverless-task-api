@@ -49,11 +49,11 @@ This project keeps memory low and function execution simple, which helps keep co
 
 ## Frontend hosting cost
 
-The dashboard files are included in the Lambda deployment package and served by the existing
-API Gateway and Lambda function. This avoids adding a public S3 website bucket or CloudFront
-distribution. Requests for the UI still use API Gateway and Lambda, so they count toward the
-same service usage as API requests and may be billable outside your account's Free Tier credits
-or allowances.
+The dashboard uses S3 static website hosting and does not create a CloudFront distribution.
+S3 storage, requests, and transfer may use Free Tier credits or allowances, but can still be
+billable if those are exceeded. This project also retains an S3 bucket for Lambda artifacts.
+Check AWS Billing and set a budget alert; Terraform cannot guarantee a zero bill for every
+account or traffic level.
 
 ---
 

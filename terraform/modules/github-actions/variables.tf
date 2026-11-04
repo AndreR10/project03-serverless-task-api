@@ -65,6 +65,16 @@ variable "lambda_artifacts_bucket_name" {
   default     = "task-api-dev-lambda-artifacts"
 }
 
+variable "frontend_bucket_arn" {
+  description = "ARN of the S3 website bucket used by the dashboard."
+  type        = string
+}
+
+variable "frontend_objects_arn" {
+  description = "ARN pattern for objects in the S3 website bucket."
+  type        = string
+}
+
 variable "lambda_function_name" {
   description = "Name of the Lambda function created by the Terraform deployment."
   type        = string

@@ -68,5 +68,13 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -input=false -out=tfplan
 
+      - name: Verify Lambda ZIP dependencies
+        run: |
+          ZIP_FILES="$(unzip -Z1 build/task-api.zip)"
+          printf '%s\n' "$ZIP_FILES" | grep -Fx 'node_modules/uuid/package.json' >/dev/null || {
+            echo "Lambda ZIP is missing node_modules/uuid/package.json" >&2
+            exit 1
+          }
+
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
